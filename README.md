@@ -1,57 +1,61 @@
-# Harvard Fencing Club
+# Harvard Fencing Club ⚔️
 
-A small Jekyll site for GitHub Pages. Pages: **Home** (practice times + photo slideshow), **Events**, **Team** (leadership + outreach), **Play** (a browser fencing game), and **Resources** (links + first-practice FAQ).
+**Open to everyone!** We're a student fencing club at Harvard that welcomes fencers of every level, from people who have never held a blade to experienced competitors, in all three weapons: foil, épée, and sabre.
 
-## Preview locally
+🌐 **Website:** [harvard-fencing-club.github.io](https://harvard-fencing-club.github.io)
 
-Requires Ruby. Once: `gem install jekyll webrick`. Then from this folder:
+## Practice with us
 
-```
-jekyll serve
-```
+| When | Time |
+|---|---|
+| Tuesday | 7:30–9:30 PM |
+| Thursday | 7–10 PM (Crimson Club Open Bouting) |
+| Sunday | 10:30 AM–12:30 PM |
 
-Open http://localhost:4000. Edits rebuild automatically. Refresh to see them.
+📍 **Malkin Athletic Center (MAC), Fencing Room 1, 3rd floor**, Cambridge, MA ([map](https://www.google.com/maps/search/?api=1&query=Malkin+Athletic+Center%2C+39+Holyoke+St%2C+Cambridge%2C+MA))
 
-## Where to edit
+New to fencing? Just show up to a Tuesday or Sunday practice. We provide all the equipment and teach you everything you need.
 
-- **`content.js`**: practice times/location, slideshow settings, events, leaders, outreach, resource links, FAQs. Most changes happen here.
-- **`_config.yml`**: site title/description and the header navigation.
-- **`_layouts/default.html`**, **`_includes/header.html`**: shared page shell. Edit once, every page updates.
-- **`index.html`, `events.html`, `team.html`, `play.html`, `resources.html`**: each page's headings and structure (front matter sets its title and nav highlight).
-- **`styles.css`**: look and layout. **`script.js`**: page behavior. **`game.js`**: the fencing game.
+## Who can join
 
-If practice times or contact details change, also update the static fallback text in `index.html`, the FAQ in `content.js`, and the description in `_layouts`/front matter.
+Students from every Harvard school, MIT, and other colleges in the area are welcome. If you don't have a Harvard athletics membership, we'll sign you in at the front desk.
 
-## Photos (Google Drive folder)
+## Get in touch
 
-The home slideshow plays every photo in the club's public Drive folder, in random order on each visit. Only the current and next photos load, so large albums are fine.
+- 💬 **WhatsApp:** [Join our group](https://chat.whatsapp.com/L9N5Ad1ajsz0t6oA2TtgGX)
+- ✉️ **Email:** [harvardfencingclub@gmail.com](mailto:harvardfencingclub@gmail.com)
+- 📷 **Instagram:** [@theharvardfencingclub](https://www.instagram.com/theharvardfencingclub/)
+- 🎓 **Harvard SoCo:** [Our student organization page](https://soco.college.harvard.edu/257861/home/)
 
-After adding photos to the folder, refresh the list and push:
+## What's on the website
 
-```
-python update-photos.py
-```
+- **Home:** the weekly practice schedule, a live "next practice" reminder, and a slideshow of photos from the club.
+- **Events:** competitions like the NEIFC Big One, plus weekly open bouting with the Crimson Club.
+- **Team:** meet our club leaders and find out how to reach us.
+- **Play:** a fencing game you can play in your browser. Advance, retreat, lunge, and parry your way to five touches against the computer, from Novice up to Olympian.
+- **Resources:** our favorite fencing videos, competition sites, and answers to common questions.
 
-This rewrites `photos.js` (photo IDs only, no image files in the repo). Videos are skipped. The folder must stay shared as **Anyone with the link → Viewer**. The folder link lives at the top of `update-photos.py`. Slideshow speed, autoplay, and shuffle are in `content.js`.
+## Leadership
 
-## Team and event photos
+- **Adi Raj**, President
+- **Tatum Mueller**, President
+- **Dafne Unsal Nuchi**, Executive
+- **Ziva Benedejcic**, Executive
 
-- **Leader profile pictures:** put the image in `assets/team/` and set that leader's `photo` in `content.js`, e.g. `photo: "assets/team/adi-raj.jpg"`. They show as circles, and `photoPosition` adjusts the crop.
-- **Photos beside Events / under Leadership:** add entries to `eventPhotos` or `teamPhotos` in `content.js`, e.g. `{ src: "assets/photos/big-one.jpg", alt: "Club at the Big One" }`. A Drive file ID also works: `{ driveId: "…", alt: "…" }`.
+---
 
-Empty photo frames appear only in the localhost preview. On the live site the space stays hidden until photos are added.
+<details>
+<summary><strong>For club officers: updating the website</strong></summary>
 
-## The game
+The site is built with [Jekyll](https://jekyllrb.com/) and published automatically by GitHub Pages whenever changes are pushed to `main`.
 
-`play.html` + `game.js`: You fence the computer. Advance/retreat (A/D or arrows), lunge (Space/J), and parry (K/↓). On-screen buttons appear on touch devices. Four levels: Novice, Intermediate, Club, Olympian. First to 5 wins. A parried attacker is briefly stunned, and the parrier's next lunge is faster (riposte). If both lunges land, the one started first scores. If they start within 50 ms, it's simultaneous and nobody scores. The win/loss record is stored only in the visitor's browser.
+- **Most details** (practice times, events, leaders, links, FAQs, photos) live in `content.js`.
+- **Look and layout:** `styles.css`. **Page behavior:** `script.js`. **The game:** `game.js`.
+- **Shared header and navigation:** `_includes/header.html`, `_layouts/default.html`, and `_config.yml`.
+- **Home slideshow photos** come from the club's public Google Drive folder. After adding photos there, run `python update-photos.py` and push the updated `photos.js`.
+- **Leader and group photos** go in `assets/team/` and `assets/photos/`, then get listed in `content.js`.
+- **Preview locally:** install Ruby, run `gem install jekyll webrick` once, then `jekyll serve` and open http://localhost:4000.
 
-## Publish on GitHub Pages
+If practice times or contact details change, also update the backup text in `index.html` and the FAQ in `content.js`.
 
-1. Push this folder's contents to a repository root.
-2. **Settings → Pages → Deploy from a branch → main → / (root)**. GitHub builds the Jekyll site automatically.
-
-Links are relative, so the site works on a `username.github.io/repo/` subpath without setting `baseurl`.
-
-## Sources
-
-Practice, leaders, contact details, and events came from the club. The [NEIFC event page](https://www.neifc.org/big-one) listed November 1, 2026 at Smith College when checked October 3, 2026. The [Harvard Athletics timeline](https://gocrimson.com/sports/2020/5/5/information-history-traditiontimeline.aspx) is linked as broader Harvard fencing history, not this club's founding.
+</details>
