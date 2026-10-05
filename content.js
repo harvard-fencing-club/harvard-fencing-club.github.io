@@ -37,6 +37,12 @@ window.CLUB_CONTENT = {
   // Optional link: href + linkLabel. Leave both out for no link.
   events: [
     {
+      tag: "Club event",
+      title: "Fencing Retreat",
+      date: "2026-10-10",
+      description: "Day hiking Mount Kearsarge in New Hampshire with the club! Check the WhatsApp for details!"
+    },
+    {
       tag: "Competition",
       title: "The Big One",
       subtitle: "NEIFC Fall Invitational",
@@ -71,6 +77,7 @@ window.CLUB_CONTENT = {
   // Use an image in assets/photos/ (src: "assets/photos/big-one.jpg") or a
   // Google Drive file ID (driveId: "..."). alt briefly describes the photo.
   eventPhotos: [
+    { src: "assets/photos/group-6.jpeg", alt: "Club members on a rocky mountain summit above a valley of fall foliage", position: "50% 70%" },
     { src: "assets/photos/group-5.jpeg", alt: "Club fencers in jackets touching blade tips together in a Harvard gym", position: "50% 60%" },
     { src: "assets/photos/group-2.jpeg", alt: "Club fencers in full gear lined up in front of the fencing room mirrors", position: "50% 45%" }
   ],
