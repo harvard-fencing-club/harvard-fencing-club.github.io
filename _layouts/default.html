@@ -8,9 +8,11 @@
   {%- comment %} Apply a saved dark-mode choice before anything draws, so there's no white flash. {% endcomment %}
   <script>try{var r=document.documentElement,t=localStorage.getItem("hfc-theme");if(t)r.dataset.theme=t;if(t==="dark"){r.style.backgroundColor="#141011";r.style.colorScheme="dark"}else{r.style.colorScheme="light"}}catch(e){}</script>
   {%- assign full_title = site.title %}{% if page.title %}{% assign full_title = page.title | append: " — " | append: site.title %}{% endif %}
+  {%- comment %} Browser tab uses the short name, e.g. "Events - HFC"; link previews keep the full name. {% endcomment %}
+  {%- assign tab_title = site.title %}{% if page.title %}{% assign tab_title = page.title | append: " - HFC" %}{% endif %}
   {%- assign desc = page.description | default: site.description %}
   {%- assign v = site.time | date: "%s" %}
-  <title>{{ full_title | escape }}</title>
+  <title>{{ tab_title | escape }}</title>
   <meta name="description" content="{{ desc | escape }}">
 
   {%- comment %} Link previews (WhatsApp, iMessage, Instagram, ...) {% endcomment %}
