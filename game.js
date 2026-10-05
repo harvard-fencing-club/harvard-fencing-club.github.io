@@ -14,10 +14,10 @@
   const EXTEND = 230, RIPOSTE_EXTEND = 150, HOLD = 120, RECOVER = 380, PARRY = 420, PARRY_ACTIVE = 280, STUN = 600;
   // prepAttack: chance to lunge into your advance (attack on preparation) when in range.
   const LEVELS = [
-    { name: "Novice", think: 320, react: 330, parry: .3, aggression: .25, prep: 260, riposte: .3, speed: .8, prepAttack: 0 },
-    { name: "Intermediate", think: 260, react: 270, parry: .42, aggression: .33, prep: 200, riposte: .45, speed: .87, prepAttack: .1 },
-    { name: "Club", think: 190, react: 200, parry: .6, aggression: .45, prep: 130, riposte: .75, speed: .95, prepAttack: .25 },
-    { name: "Olympian", think: 90, react: 115, parry: .88, aggression: .6, prep: 40, riposte: 1, speed: 1.1, prepAttack: .6 }
+    { name: "Novice", opponent: "a novice fencer", think: 320, react: 330, parry: .3, aggression: .25, prep: 260, riposte: .3, speed: .8, prepAttack: 0 },
+    { name: "Intermediate", opponent: "an intermediate fencer", think: 260, react: 270, parry: .42, aggression: .33, prep: 200, riposte: .45, speed: .87, prepAttack: .1 },
+    { name: "Club", opponent: "a club fencer", think: 190, react: 200, parry: .6, aggression: .45, prep: 130, riposte: .75, speed: .95, prepAttack: .25 },
+    { name: "Olympian", opponent: "an Olympian", think: 90, react: 115, parry: .88, aggression: .6, prep: 40, riposte: 1, speed: 1.1, prepAttack: .6 }
   ];
   const FONT = () => getComputedStyle(document.documentElement).getPropertyValue("--display").trim() || "Helvetica, Arial, sans-serif";
   const COLORS = { player: "#ff3b4e", cpu: "#3ee07a" };
@@ -151,8 +151,8 @@
     try { localStorage.setItem("hfc-duel-record", JSON.stringify(record)); } catch { /* storage unavailable */ }
     showRecord();
     phase = "over";
-    document.getElementById("overlay-title").textContent = won ? "Victory." : "Defeat.";
-    document.getElementById("overlay-text").textContent = `${player.score}–${cpu.score} vs. ${level.name} fencer. ${won ? (level.name === "Olympian" ? "You are the GOAT." : "Try a harder opponent?") : "Salute and rematch!"}`;
+    document.getElementById("overlay-title").textContent = won ? "Victory!" : "Defeat.";
+    document.getElementById("overlay-text").textContent = `${player.score}–${cpu.score} against ${level.opponent}. ${won ? (level.name === "Olympian" ? "You are the GOAT." : "Try a harder opponent?") : "Salute and rematch!"}`;
     document.getElementById("start-btn").textContent = "Rematch";
     overlay.hidden = false;
     document.getElementById("start-btn").focus({ preventScroll: true });
@@ -196,9 +196,9 @@
     // Blade: from hand toward tip. Parry raises it, a stun knocks it back.
     let tip = [j.sh2[0] + 105 + 10 * who.e, j.sh2[1] - 15 + 13 * who.e];
     if (who.p > 0) {
-      j.se = [lerp(j.se[0], 35, who.p), lerp(j.se[1], -160, who.p)];
-      j.sh2 = [lerp(j.sh2[0], 58, who.p), lerp(j.sh2[1], -178, who.p)];
-      tip = [lerp(tip[0], 95, who.p), lerp(tip[1], -282, who.p)];
+      j.se = [lerp(j.se[0], 35, who.p), lerp(j.se[1], -132, who.p)];
+      j.sh2 = [lerp(j.sh2[0], 58, who.p), lerp(j.sh2[1], -150, who.p)];
+      tip = [lerp(tip[0], 95, who.p), lerp(tip[1], -254, who.p)];
     }
     if (who.state === "stunned") { j.sh2 = [55, -168]; tip = [10, -268]; }
     j.tip = tip;

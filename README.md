@@ -1,8 +1,8 @@
-# Harvard Fencing Club ⚔️
+# Harvard Fencing Club 
 
-**Open to everyone!** We're a student fencing club at Harvard that welcomes fencers of every level, from people who have never held a blade to experienced competitors, in all three weapons: foil, épée, and sabre.
+**Open to everyone!** We're a student fencing club at Harvard that welcomes fencers of every level in all three weapons.
 
-🌐 **Website:** [harvard-fencing-club.github.io](https://harvard-fencing-club.github.io)
+**Website:** [harvard-fencing-club.github.io](https://harvard-fencing-club.github.io)
 
 ## Practice with us
 
@@ -12,7 +12,7 @@
 | Thursday | 7–10 PM (Crimson Club Open Bouting) |
 | Sunday | 10:30 AM–12:30 PM |
 
-📍 **Malkin Athletic Center (MAC), Fencing Room 1, 3rd floor**, Cambridge, MA ([map](https://www.google.com/maps/search/?api=1&query=Malkin+Athletic+Center%2C+39+Holyoke+St%2C+Cambridge%2C+MA))
+**Malkin Athletic Center (MAC), Fencing Room 1, 3rd floor**, Cambridge, MA ([map](https://www.google.com/maps/search/?api=1&query=Malkin+Athletic+Center%2C+39+Holyoke+St%2C+Cambridge%2C+MA))
 
 New to fencing? Just show up to a Tuesday or Sunday practice. We provide all the equipment and teach you everything you need.
 
@@ -22,10 +22,10 @@ Students from every Harvard school, MIT, and other colleges in the area are welc
 
 ## Get in touch
 
-- 💬 **WhatsApp:** [Join our group](https://chat.whatsapp.com/L9N5Ad1ajsz0t6oA2TtgGX)
-- ✉️ **Email:** [harvardfencingclub@gmail.com](mailto:harvardfencingclub@gmail.com)
-- 📷 **Instagram:** [@theharvardfencingclub](https://www.instagram.com/theharvardfencingclub/)
-- 🎓 **Harvard SoCo:** [Our student organization page](https://soco.college.harvard.edu/257861/home/)
+- **WhatsApp:** [Join our group](https://chat.whatsapp.com/L9N5Ad1ajsz0t6oA2TtgGX)
+- **Email:** [harvardfencingclub@gmail.com](mailto:harvardfencingclub@gmail.com)
+- **Instagram:** [@theharvardfencingclub](https://www.instagram.com/theharvardfencingclub/)
+- **Harvard SoCo:** [Our student organization page](https://soco.college.harvard.edu/257861/home/)
 
 ## What's on the website
 
@@ -33,6 +33,7 @@ Students from every Harvard school, MIT, and other colleges in the area are welc
 - **Events:** competitions like the NEIFC Big One, plus weekly open bouting with the Crimson Club.
 - **Team:** meet our club leaders and find out how to reach us.
 - **Play:** a fencing game you can play in your browser. Advance, retreat, lunge, and parry your way to five touches against the computer, from Novice up to Olympian.
+- **Donate:** how alumni and friends can support the club through Harvard's giving portal or by check.
 - **Resources:** our favorite fencing videos, competition sites, and answers to common questions.
 
 ## Leadership

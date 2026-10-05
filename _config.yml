@@ -8,6 +8,7 @@ nav:
   - { key: events, label: Events, href: events.html }
   - { key: team, label: Team, href: team.html }
   - { key: play, label: Play, href: play.html }
+  - { key: donate, label: Donate, href: donate.html }
   - { key: resources, label: Resources, href: resources.html }
 
 exclude:

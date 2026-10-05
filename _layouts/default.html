@@ -4,6 +4,8 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="theme-color" content="#a51c30">
+  <meta name="color-scheme" content="light">
+  <script>try{var r=document.documentElement,t=localStorage.getItem("hfc-theme");if(t)r.dataset.theme=t;if(t==="dark"){r.style.backgroundColor="#141011";r.style.colorScheme="dark"}else{r.style.colorScheme="light"}}catch(e){}</script>
   {%- assign full_title = site.title %}{% if page.title %}{% assign full_title = page.title | append: " — " | append: site.title %}{% endif %}
   {%- assign desc = page.description | default: site.description %}
   {%- assign v = site.time | date: "%s" %}
@@ -15,7 +17,8 @@
   <link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Graduate&family=Barlow+Semi+Condensed:wght@700&family=Barlow:wght@400;500;600;700;800&family=Geist+Mono:wght@500;600&display=swap">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Graduate&display=block">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Semi+Condensed:wght@700&family=Barlow:wght@400;500;600;700;800&family=Geist+Mono:wght@500;600&display=swap">
   <link rel="stylesheet" href="styles.css?v={{ v }}">
   <script src="content.js?v={{ v }}" defer></script>
   {%- for script in page.data_scripts %}
@@ -30,5 +33,6 @@
   <a class="skip-link" href="#main">Skip to content</a>
 {% include header.html %}
 {{ content }}
+  <footer class="site-footer"><div class="wrap">A student-run club sport organization at Harvard University. The Harvard name is a trademark of the President and Fellows of Harvard College and is used by permission of Harvard University. © {{ site.time | date: "%Y" }} Harvard Fencing Club</div></footer>
 </body>
 </html>

@@ -6,6 +6,7 @@ window.CLUB_CONTENT = {
   email: "harvardfencingclub@gmail.com",
   instagram: "theharvardfencingclub", // Handle without @.
   whatsapp: "https://chat.whatsapp.com/L9N5Ad1ajsz0t6oA2TtgGX", // Group invite link.
+  donateUrl: "https://community.alumni.harvard.edu/give/15716515", // Harvard Athletics giving form (fund: Club Fencing).
   socoUrl: "https://soco.college.harvard.edu/257861/home/",
 
   // Home-page welcome line.
@@ -40,7 +41,7 @@ window.CLUB_CONTENT = {
       tag: "Club event",
       title: "Fencing Retreat",
       date: "2026-10-10",
-      description: "Day hiking Mount Kearsarge in New Hampshire with the club! Check the WhatsApp for details!"
+      description: "Day hiking Mount Kearsarge in New Hampshire together! Check the WhatsApp for details!"
     },
     {
       tag: "Competition",
@@ -82,15 +83,15 @@ window.CLUB_CONTENT = {
     { src: "assets/photos/group-2.jpeg", alt: "Club fencers in full gear lined up in front of the fencing room mirrors", position: "50% 45%" }
   ],
   teamPhotos: [
-    { src: "assets/photos/group-1.jpeg", alt: "Smiling group selfie of club members on the fencing strips", position: "50% 40%" },
-    { src: "assets/photos/group-3.jpeg", alt: "Club members lined up in front of the fencing room mirrors", position: "50% 50%" },
-    { src: "assets/photos/group-4.jpeg", alt: "Group selfie of club members after practice in the fencing room", position: "50% 45%" }
+    { src: "assets/photos/group-1.jpeg", alt: "Smiling group selfie of club members on the fencing strips", position: "50% 30%" },
+    { src: "assets/photos/group-3.jpeg", alt: "Club members lined up in front of the fencing room mirrors", position: "50% 40%" },
+    { src: "assets/photos/group-4.jpeg", alt: "Group selfie of club members after practice in the fencing room", position: "50% 35%" }
   ],
 
   // Add real outreach initiatives here as { title, description, href } when you have them.
   outreach: {
     heading: "Contact us!",
-    body: "We're happy to hear any feedback, comments, criticisms, and suggestions from student groups, clubs, and fencers across Boston!",
+    body: "We're happy to hear any feedback, criticisms, and suggestions from student groups, clubs, and fencers across Boston!",
     items: []
   },
 

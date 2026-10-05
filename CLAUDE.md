@@ -2,7 +2,7 @@
 
 Jekyll site for Harvard Fencing Club on GitHub Pages (no backend, no plugins beyond GitHub Pages defaults). Keep it minimal-text, crimson-focused, low-scroll, and easy to edit. Preview with `jekyll serve` (localhost:4000).
 
-Pages: `index.html` (practice times + slideshow), `events.html`, `team.html` (leadership + outreach), `play.html` (+ `game.js` fencing game), `resources.html` (links + FAQ). Shared shell: `_layouts/default.html`, `_includes/header.html` (no footer); nav lives in `_config.yml`. Edit `content.js` for club details, `styles.css` for appearance, `script.js` for interactions. Keep links relative (works under a repo subpath).
+Pages: `index.html` (practice times + slideshow), `events.html`, `team.html` (leadership + outreach), `play.html` (+ `game.js` fencing game), `resources.html` (links + FAQ), `donate.html` (Harvard Athletics giving form, fund "Club Fencing"; checks to Friends of Harvard; the 25¢ match was stated by the user and isn't on Harvard's pages). Shared shell: `_layouts/default.html`, `_includes/header.html` (no footer); nav lives in `_config.yml`. Edit `content.js` for club details, `styles.css` for appearance, `script.js` for interactions. Keep links relative (works under a repo subpath).
 
 Confirmed: Tuesday 7:30–9:30 PM; Sunday 10:30 AM–12:30 PM; MAC Fencing Room 1, 3rd floor; Adi Raj and Tatum Mueller are presidents; Dafne Unsal Nuchi and Ziva Benedejcic are executives. Contact: harvardfencingclub@gmail.com, Instagram @theharvardfencingclub, and the WhatsApp group (`whatsapp` in content.js; button on Home). Activities include Crimson Club Open Bouting (Thursdays 7–10 PM; shown on the home schedule) and the NEIFC Big One.
 
@@ -13,3 +13,7 @@ Fonts: Graduate (uppercase wordmark + page h1, via `--title`), Barlow (body/head
 Do not invent dues, gear policies, competition eligibility, training promises, or club-specific founding history. Keep the broader Harvard fencing history distinct from today's student club.
 
 Check desktop/mobile layout, menu open/close, nav links, FAQ disclosure, slideshow navigation/pause, the game on keyboard and touch, and resource paths under a repository subpath. Google-hosted images need `referrerpolicy="no-referrer"` (they 429 with a referrer). Reduced-motion users start with autoplay disabled. Update the essential static HTML fallback if practice/contact details change.
+
+Harvard Club Sports website rules (soco.college.harvard.edu/clubsports/media-polices): keep the affiliation line "A student-run club sport organization at Harvard University" under the header name (`_includes/header.html`) and the trademark statement in the footer (`_layouts/default.html`). Don't use the Harvard shield. Photos need signed releases (club's responsibility). The club should get Club Sports approval for site content and the "harvard" domain name.
+
+Logo: lunging fencer (header SVG in `_includes/header.html`, matching `assets/favicon.svg`). Clicking it toggles light/dark mode (saved in localStorage `hfc-theme`; light is the default). Dark palette lives in the `:root[data-theme="dark"]` block at the top of `styles.css`; use `--accent` for crimson text/borders (lighter in dark mode) and `--crimson` for solid fills.

@@ -15,6 +15,7 @@
 
   // ---------- Shared: contact links and navigation ----------
   const emailLinks = {
+    check: email("Donating to Harvard Fencing Club by check", "Hi Harvard Fencing Club!\n\nI’d like to donate by check. Where should I send it?\n\nThanks!"),
     "first-practice": email("My first fencing practice", "Hi Harvard Fencing Club!\n\nI’d like to come to a practice. My fencing experience is: \n\nCould you confirm any schedule changes and what I should bring?\n\nThanks!"),
     outreach: email("Collaborating with Harvard Fencing Club", "Hi Harvard Fencing Club!\n\nI’m reaching out from: \n\nI’d love to talk about: \n\nThanks!")
   };
@@ -23,6 +24,7 @@
   document.querySelectorAll("[data-instagram]").forEach(link => link.href = `https://www.instagram.com/${encodeURIComponent(handle)}/`);
   document.querySelectorAll("[data-soco]").forEach(link => link.href = safeUrl(content.socoUrl, link.href));
   document.querySelectorAll("[data-whatsapp]").forEach(link => link.href = safeUrl(content.whatsapp, link.href));
+  document.querySelectorAll("[data-donate]").forEach(link => link.href = safeUrl(content.donateUrl, link.href));
 
   const menuButton = $(".menu-toggle"), nav = $("#main-nav");
   const setMenu = open => { menuButton.setAttribute("aria-expanded", String(open)); menuButton.setAttribute("aria-label", `${open ? "Close" : "Open"} navigation`); nav.classList.toggle("is-open", open); };
@@ -31,6 +33,25 @@
   document.addEventListener("keydown", event => { if (event.key === "Escape" && menuButton.getAttribute("aria-expanded") === "true") { setMenu(false); menuButton.focus(); } });
   document.addEventListener("click", event => { if (!event.target.closest(".site-header")) setMenu(false); });
   window.matchMedia("(min-width: 961px)").addEventListener("change", event => { if (event.matches) setMenu(false); });
+
+  // ---------- Light / dark mode (the lunging-fencer logo is the switch) ----------
+  const themeButton = $(".theme-toggle");
+  const currentTheme = () => document.documentElement.dataset.theme || "light";
+  const syncThemeButton = () => {
+    const next = currentTheme() === "dark" ? "light" : "dark";
+    themeButton.setAttribute("aria-label", `Switch to ${next} mode`);
+    themeButton.title = `Switch to ${next} mode`;
+  };
+  themeButton.addEventListener("click", () => {
+    const next = currentTheme() === "dark" ? "light" : "dark";
+    const apply = () => { const root = document.documentElement; root.dataset.theme = next; root.style.backgroundColor = ""; root.style.colorScheme = next; syncThemeButton(); };
+    try { localStorage.setItem("hfc-theme", next); } catch { /* storage unavailable */ }
+    themeButton.classList.add("lunge");
+    window.setTimeout(() => themeButton.classList.remove("lunge"), 250);
+    if (document.startViewTransition && !window.matchMedia("(prefers-reduced-motion: reduce)").matches) document.startViewTransition(apply);
+    else apply();
+  });
+  syncThemeButton();
 
   // Dates and times in Cambridge, not the visitor’s timezone.
   const zone = "America/New_York";
@@ -96,6 +117,8 @@
     });
     $("#gallery-stage").replaceChildren(...frames);
     $("#gallery-controls").hidden = photos.length < 2;
+    const scrub = $("#gallery-scrub");
+    scrub.max = photos.length; scrub.hidden = photos.length < 2;
 
     const motionQuery = window.matchMedia("(prefers-reduced-motion: reduce)");
     const pauseButton = $("#slide-pause");
@@ -117,19 +140,33 @@
       load(index); load((index + 1) % photos.length); // Only the current and next photo.
       frames.forEach((frame, i) => { frame.classList.toggle("is-active", i === index); frame.setAttribute("aria-hidden", String(i !== index)); });
       $("#gallery-count").textContent = `${String(index + 1).padStart(2, "0")} / ${String(photos.length).padStart(2, "0")}`;
+      syncScrub(index);
       if (announce) { $("#slide-announcement").textContent = `Photo ${index + 1} of ${photos.length}`; syncTimer(); }
     }
+    // Scrubber: drag to flick through photos. The counter follows instantly; the photo
+    // itself loads once the thumb settles briefly, so fast drags don't fetch every image.
+    function syncScrub(i) { scrub.value = i + 1; scrub.style.setProperty("--pct", `${photos.length > 1 ? i / (photos.length - 1) * 100 : 0}%`); }
+    let scrubTimer = null;
+    scrub.addEventListener("input", () => {
+      userPaused = true;
+      const i = Number(scrub.value) - 1;
+      syncScrub(i);
+      $("#gallery-count").textContent = `${String(i + 1).padStart(2, "0")} / ${String(photos.length).padStart(2, "0")}`;
+      window.clearTimeout(scrubTimer);
+      scrubTimer = window.setTimeout(() => show(i, true), 90);
+    });
     $("#slide-prev").addEventListener("click", () => show(index - 1, true));
     $("#slide-next").addEventListener("click", () => show(index + 1, true));
     pauseButton.addEventListener("click", () => { userPaused = !userPaused; syncTimer(); });
     gallery.addEventListener("mouseenter", () => { hovered = true; syncTimer(); });
     gallery.addEventListener("mouseleave", () => { hovered = false; syncTimer(); });
     gallery.addEventListener("keydown", event => {
+      if (event.target === scrub) return;
       if (event.key === "ArrowRight") { event.preventDefault(); userPaused = true; show(index + 1, true); }
       if (event.key === "ArrowLeft") { event.preventDefault(); userPaused = true; show(index - 1, true); }
     });
     let touchStart = null;
-    gallery.addEventListener("touchstart", event => { const t = event.changedTouches[0]; touchStart = { x: t.clientX, y: t.clientY }; }, { passive: true });
+    gallery.addEventListener("touchstart", event => { if (event.target === scrub) { touchStart = null; return; } const t = event.changedTouches[0]; touchStart = { x: t.clientX, y: t.clientY }; }, { passive: true });
     gallery.addEventListener("touchend", event => {
       if (!touchStart) return;
       const t = event.changedTouches[0], dx = t.clientX - touchStart.x, dy = t.clientY - touchStart.y;
