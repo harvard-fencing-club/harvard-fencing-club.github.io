@@ -28,9 +28,42 @@
     '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="7" y="7" width="13" height="13" rx="2"/><path d="M4 16V5a1 1 0 0 1 1-1h11"/></svg>';
   let rendered = 0;
 
+  // Tile sizes: every 10th tile is a big 2x2 feature. To make the grid end in a full
+  // rectangle, a few tiles are widened (2x1) so the cell count divides evenly by the
+  // number of columns, which depends on screen width (recalculated on resize).
+  let sizes = [];
+  let columns = 0;
+  function planSizes() {
+    columns = getComputedStyle(grid).gridTemplateColumns.split(" ").filter(Boolean).length || 1;
+    const n = groups.length;
+    sizes = groups.map((_, i) => (columns >= 3 && i % 10 === 0 ? "big" : ""));
+    const cells = n + 3 * sizes.filter((size) => size === "big").length;
+    let missing = (columns - (cells % columns)) % columns;
+    // Prefer widening tiles halfway between features, working back from the end.
+    for (let i = n - 1; i >= 0 && missing > 0 && columns >= 2; i--) {
+      if (i % 10 === 5 && !sizes[i]) ((sizes[i] = "wide"), missing--);
+    }
+    for (let i = n - 2; i >= 0 && missing > 0 && columns >= 2; i -= 3) {
+      if (!sizes[i]) ((sizes[i] = "wide"), missing--);
+    }
+  }
+  planSizes();
+  window.addEventListener("resize", () => {
+    window.clearTimeout(planSizes.timer);
+    planSizes.timer = window.setTimeout(() => {
+      const before = columns;
+      planSizes();
+      if (columns === before) return;
+      grid.querySelectorAll(".photo-tile").forEach((tile, i) => {
+        tile.classList.toggle("big", sizes[i] === "big");
+        tile.classList.toggle("wide", sizes[i] === "wide");
+      });
+    }, 150);
+  });
+
   function makeTile(group, i) {
-    const big = i % 10 === 0; // every 10th tile is a large feature tile
-    const tile = make("button", { className: `photo-tile${big ? " big" : ""}`, type: "button" });
+    const size = sizes[i];
+    const tile = make("button", { className: `photo-tile${size ? ` ${size}` : ""}`, type: "button" });
     tile.setAttribute(
       "aria-label",
       group.length > 1 ? `Open collection ${i + 1}: ${group.length} similar photos` : `Open photo ${i + 1}`,
@@ -40,7 +73,7 @@
       loading: "lazy",
       decoding: "async",
       referrerPolicy: "no-referrer",
-      src: photoUrl(group[0], big ? 800 : 400),
+      src: photoUrl(group[0], size ? 800 : 400),
     });
     image.addEventListener("load", () => tile.classList.add("is-loaded"), { once: true });
     image.addEventListener("error", () => tile.classList.add("is-error"), { once: true });

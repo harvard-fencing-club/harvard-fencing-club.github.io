@@ -65,6 +65,26 @@ HOME_FOCUS = {
     "1BEYOVwVEfWS-uwsxrLGd5UyYXR-F0maq": "60% 50%",  # fencer on the right
     "1uNAjK2biGJz50iGc55AELZlrCsjtFexu": "50% 38%",  # tall: fencer lying on the strip
 }
+# Manual merges for the Gallery: each entry lists photo IDs (any photo from each
+# collection) whose collections should be combined into one. Stored by photo ID,
+# so merges survive reruns and renumbering.
+MERGES = [
+    ["1sgPu-QG_mjyTbf6VurfJ8gwDrWTC_XMz", "1sFTPgLwJuhHE7vhK6mIO_Lq2pxVKsLmA"],
+    ["1weXhxtM2jIy1o87iBJ4fzgRR4TPu47pB", "1O5ZHsqO1iphgkYYlCQK6Tq33RnIiPjZm"],
+    ["1aMDCtRNh-2i--dekiyAGUBMTWrKuz-J0", "1GGWeiVAVnyUZdDDTTvk2U62y-HGtV9M0", "1ALXcFlKfffPRYYqqVqv2zIZCbfOuVWh5", "1zzjm_lYi-OSoTRxxWFGu4lPZsxIPM-9m", "19P0fmd_HszGIb78EYl5kRWNT1zpHNeYC", "1ehWFIrJGTGtgjd4RWs8yVMxs6-R6pwn1"],
+    ["1KXggUiLRAvhXuDskFFprIvgfVTO1iyXk", "1YZg1vbe6n0RjU3aFktMWETyNQ3w5769A", "1MoNxy5uupg4mvFOwUaYZMv_TLgPBtf0O", "1GF1IfZHtRzb6Gj0QPDPLP50ewVEl6oeF", "1otyiC5Mo-gZvNklIhZ8oUa3MsvZNBs7M", "1yhIf75QoUdBrnMxjr0xBxnWCQM8swowK"],
+    ["1K8LTgWcEUhydnydA2rqQoSnzAHjiBK1f", "1O3isLzrvztvp5FhZKYWYlWi1qJsNX-Nz"],
+    ["10_xtKRU_o1w4wZ3s5v396_TicTQXBx0q", "1YBsnyMvHLnWl_5TMMKNXzz-FfgonOpkY"],
+    ["1OF2yqbc7JPBhoCfUqVT5cTiD7diMz77u", "1dQgepJpyp3wtXjPGEBHkozgPFBQn_Rlx", "1YxujRkWbLOPKN65OhOKNHkTea5mEqKG8", "19VfEHKzpKazOaqz-tB4OeAEKZg7hddTS"],
+    ["1By-AJOU-k-3jqljoB9tkV6E3gUQyzrpQ", "1QNaBlT2L2gInhi_v7PThzCITPjQH_G1b", "1M5qfwGd0y_lpaIvVZG4eJu1n2ybPpjsh"],
+    ["1dqQ4q0dYnAyNypu0eMbSdqbsq8rJzDF8", "1_rpy3vz6zKo83qvxeYF9ndC-7Cw8jzDd"],
+    ["1wIVR6WbaJ4Qw4YrXMqs1x3XkQyeCLEU0", "17rQii5814yTxq0XE0CpZp05rFNiH1c4N"],
+    ["1wgX9avDktgehJU-KKYBw2o1o0NoEusyI", "1JNU1LNqg0xk3NrA-rGV0aXCOngMfFb_K", "1BEYOVwVEfWS-uwsxrLGd5UyYXR-F0maq"],
+    ["18jDZYLt4qM6ZB3mrQnpTe8bAQS9vt9iG", "1pOUEnhBZo6NDsLclQStCp2b6Dew1F4wh", "1RbeKunvLFY3kamMih9Paw-3OJPeE241e"],
+    ["1yuULXj3XT_VqGRtMN2r6r9cmuecPUfeF", "1lM9eorWw0C_Rn1gu1ZuytVaO1syStu82", "1FgZazAzFNMpMd3fmS6hiOMB_uiqxhG5z"],
+    ["1P8-lMrfUJQCXtHu4L1Splwl9f9vAokHt", "1NP68KQ6XaG3J3pEBGGqXv1Y9hXECwc2j"],
+    ["1K3y0DzXVWGGnUImM5qAhWNxZY4EY-FhN", "1PCwf4SA3xKxB3pC4ABswgqsFbADyijZH"],
+]
 IMAGE_EXTENSIONS = {"jpg", "jpeg", "png", "webp", "heic", "gif"}
 TARGET_GROUPS = 95          # aim for roughly this many gallery "collections"
 GROUP_RANGE = (80, 110)     # acceptable range
@@ -155,6 +175,22 @@ for key, url in FOLDERS.items():
         data[key]["focus"] = {i: HOME_FOCUS[i] for i in ids if i in HOME_FOCUS}
     print(f"{key}: {len(ids)} photos")
 data["gallery"]["groups"] = group_similar(data["gallery"]["ids"])
+
+
+def apply_merges(groups):
+    """Combine collections listed in MERGES; the merged one sits where its earliest part was."""
+    for merge in MERGES:
+        hits = sorted({k for k, group in enumerate(groups) if set(group) & set(merge)})
+        if len(hits) < 2:
+            continue
+        combined = [photo for k in hits for photo in groups[k]]
+        first = hits[0]
+        groups = [g for k, g in enumerate(groups) if k not in hits[1:]]
+        groups[first] = combined
+    return groups
+
+
+data["gallery"]["groups"] = apply_merges(data["gallery"]["groups"])
 print(f"gallery: {len(data['gallery']['groups'])} groups of similar photos")
 
 OUTPUT = pathlib.Path(__file__).resolve().parent.parent / "assets" / "js" / "photos.js"
