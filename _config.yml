@@ -1,6 +1,8 @@
 # Jekyll settings. GitHub Pages builds the site from these files automatically.
 title: Harvard Fencing Club
-description: "Practice Tuesdays and Sundays at the MAC. Come say hello."
+description: "All levels, all three weapons. Practice Tuesdays, Thursdays and Sundays at the MAC FR1!"
+# Full address of the live site; link previews (WhatsApp, iMessage, etc.) need absolute URLs.
+url: https://harvard-fencing-club.github.io
 
 # Main navigation (header on every page). key matches each page's `nav:` front matter.
 nav:
