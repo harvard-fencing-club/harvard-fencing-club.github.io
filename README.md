@@ -31,15 +31,16 @@ Students from every Harvard school, MIT, and other colleges in the area are welc
 
 - **Home:** the weekly practice schedule, a live "next practice" reminder, and a slideshow of photos from the club.
 - **Events:** competitions like the NEIFC Big One, plus weekly open bouting with the Crimson Club.
-- **Team:** meet our club leaders and find out how to reach us.
+- **People:** meet our club leaders and find out how to reach us.
+- **Gallery:** browse club photos grouped into collections (bursts of similar shots), and open any one full screen to flip through the similar shots.
 - **Play:** a fencing game you can play in your browser. Advance, retreat, lunge, and parry your way to five touches against the computer, from Novice up to Olympian.
 - **Donate:** how alumni and friends can support the club through Harvard's giving portal or by check.
 - **Resources:** our favorite fencing videos, competition sites, and answers to common questions.
 
 ## Leadership
 
-- **Adi Raj**, President
-- **Tatum Mueller**, President
+- **Adi Raj**, Captain
+- **Tatum Mueller**, Captain
 - **Dafne Unsal Nuchi**, Executive
 - **Ziva Benedejcic**, Executive
 
@@ -50,12 +51,19 @@ Students from every Harvard school, MIT, and other colleges in the area are welc
 
 The site is built with [Jekyll](https://jekyllrb.com/) and published automatically by GitHub Pages whenever changes are pushed to `main`.
 
-- **Most details** (practice times, events, leaders, links, FAQs, photos) live in `content.js`.
-- **Look and layout:** `styles.css`. **Page behavior:** `script.js`. **The game:** `game.js`.
-- **Shared header and navigation:** `_includes/header.html`, `_layouts/default.html`, and `_config.yml`.
-- **Home slideshow photos** come from the club's public Google Drive folder. After adding photos there, run `python update-photos.py` and push the updated `photos.js`.
-- **Leader and group photos** go in `assets/team/` and `assets/photos/`, then get listed in `content.js`.
-- **Preview locally:** install Ruby, run `gem install jekyll webrick` once, then `jekyll serve` and open http://localhost:4000.
+| To change… | Edit |
+|---|---|
+| Practice times, events, leaders, links, FAQs, contact info | `assets/js/content.js` (most edits happen here) |
+| Front-page and gallery photos | links + picks at the top of `tools/update-photos.py`, then run `python tools/update-photos.py` and push the new `assets/js/photos.js` (needs `pip install pillow`) |
+| Leader portraits, event/group photos | add the image to `assets/images/team/` or `assets/images/photos/`, then list it in `content.js` |
+| Menu (page names and order) | `_config.yml` |
+| Header, footer, page shell | `_includes/header.html`, `_includes/footer.html`, `_layouts/default.html` |
+| Look and layout | `assets/css/site.css` |
+| A page's headings and structure | the page's own file (`index.html`, `events.html`, `people.html`, …) |
+
+**How the code is organised:** `assets/js/site.js` runs on every page (menu, dark mode, contact links). Each page then loads its own small script, listed in the page's front matter (`scripts: [home]` loads `assets/js/home.js`): `home.js`, `events.js`, `people.js`, `gallery.js`, `resources.js`, `game.js`.
+
+**Preview locally:** install Ruby, run `gem install jekyll webrick` once, then `jekyll serve` and open http://localhost:4000.
 
 If practice times or contact details change, also update the backup text in `index.html` and the FAQ in `content.js`.
 

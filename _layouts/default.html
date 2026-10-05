@@ -5,42 +5,46 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="theme-color" content="#a51c30">
   <meta name="color-scheme" content="light">
+  {%- comment %} Apply a saved dark-mode choice before anything draws, so there's no white flash. {% endcomment %}
   <script>try{var r=document.documentElement,t=localStorage.getItem("hfc-theme");if(t)r.dataset.theme=t;if(t==="dark"){r.style.backgroundColor="#141011";r.style.colorScheme="dark"}else{r.style.colorScheme="light"}}catch(e){}</script>
   {%- assign full_title = site.title %}{% if page.title %}{% assign full_title = page.title | append: " — " | append: site.title %}{% endif %}
   {%- assign desc = page.description | default: site.description %}
   {%- assign v = site.time | date: "%s" %}
+  <title>{{ full_title | escape }}</title>
   <meta name="description" content="{{ desc | escape }}">
+
+  {%- comment %} Link previews (WhatsApp, iMessage, Instagram, ...) {% endcomment %}
   <meta property="og:title" content="{{ full_title | escape }}">
   <meta property="og:description" content="{{ desc | escape }}">
   <meta property="og:type" content="website">
   <meta property="og:site_name" content="{{ site.title }}">
   <meta property="og:url" content="{{ page.url | replace: 'index.html', '' | absolute_url }}">
-  <meta property="og:image" content="{{ '/assets/og-image.jpg' | absolute_url }}">
+  <meta property="og:image" content="{{ '/assets/images/og-image.jpg' | absolute_url }}">
   <meta property="og:image:type" content="image/jpeg">
   <meta property="og:image:width" content="1200">
   <meta property="og:image:height" content="1200">
   <meta property="og:image:alt" content="Harvard Fencing Club">
   <meta name="twitter:card" content="summary">
-  <title>{{ full_title | escape }}</title>
-  <link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
+
+  <link rel="icon" href="assets/images/favicon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="assets/images/apple-touch-icon.png">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Graduate&display=block">
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Semi+Condensed:wght@700&family=Barlow:wght@400;500;600;700;800&family=Geist+Mono:wght@500;600&display=swap">
-  <link rel="stylesheet" href="styles.css?v={{ v }}">
-  <script src="content.js?v={{ v }}" defer></script>
-  {%- for script in page.data_scripts %}
-  <script src="{{ script }}?v={{ v }}" defer></script>
-  {%- endfor %}
-  <script src="script.js?v={{ v }}" defer></script>
+  <link rel="stylesheet" href="assets/css/site.css?v={{ v }}">
+
+  {%- comment %} Club details, shared code, then this page's own scripts (front matter `scripts:`). {% endcomment %}
+  <script src="assets/js/content.js?v={{ v }}" defer></script>
+  <script src="assets/js/site.js?v={{ v }}" defer></script>
   {%- for script in page.scripts %}
-  <script src="{{ script }}?v={{ v }}" defer></script>
+  <script src="assets/js/{{ script }}.js?v={{ v }}" defer></script>
   {%- endfor %}
 </head>
 <body class="page-{{ page.nav }}">
   <a class="skip-link" href="#main">Skip to content</a>
 {% include header.html %}
 {{ content }}
-  <footer class="site-footer"><div class="wrap">A student-run club sport organization at Harvard University. The Harvard name is a trademark of the President and Fellows of Harvard College and is used by permission of Harvard University. © {{ site.time | date: "%Y" }} Harvard Fencing Club</div></footer>
+{% include footer.html %}
 </body>
 </html>

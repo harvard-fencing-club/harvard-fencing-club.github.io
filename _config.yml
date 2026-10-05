@@ -8,7 +8,8 @@ url: https://harvard-fencing-club.github.io
 nav:
   - { key: home, label: Home, href: ./ }
   - { key: events, label: Events, href: events.html }
-  - { key: team, label: Team, href: team.html }
+  - { key: people, label: People, href: people.html }
+  - { key: gallery, label: Gallery, href: gallery.html }
   - { key: play, label: Play, href: play.html }
   - { key: donate, label: Donate, href: donate.html }
   - { key: resources, label: Resources, href: resources.html }
@@ -16,4 +17,4 @@ nav:
 exclude:
   - README.md
   - CLAUDE.md
-  - update-photos.py
+  - tools/
