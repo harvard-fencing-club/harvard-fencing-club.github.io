@@ -1,12 +1,13 @@
 ---
 layout: default
 nav: home
-data_scripts: [photos.js]
+scripts: [photos, home]
 ---
   <main id="main" class="wrap home">
     <section class="home-copy" aria-labelledby="home-title">
       <h1 class="sr-only" id="home-title">Harvard Fencing Club</h1>
       <p class="home-join" id="join-text">Open to everyone!</p>
+      <p class="home-note" id="join-note">We welcome all, from first-timers to competitive fencers, in sabre, foil, and épée! We provide all equipment and teach you everything you need.</p>
       <div class="home-head">
         <p class="label home-kicker">Every week</p>
         <p class="next-badge is-later" id="next-badge" hidden><span class="dot" aria-hidden="true"></span><span id="next-text"></span></p>
@@ -39,21 +40,24 @@ data_scripts: [photos.js]
       </div>
     </section>
 
-    <div class="gallery" id="gallery" role="region" aria-roledescription="carousel" aria-label="Photos from the club" tabindex="0">
-      <div class="gallery-stage" id="gallery-stage">
-        <figure class="gallery-slide is-active">
-          <img src="https://drive.google.com/thumbnail?id=1SMoZbdfOXq2J6fJpLoSn2S8wQ4hiKrWk&amp;sz=w1600" alt="Photo from Harvard Fencing Club" width="1600" height="1067" fetchpriority="high" referrerpolicy="no-referrer">
-        </figure>
-      </div>
-      <div class="gallery-controls" id="gallery-controls" hidden>
-        <span class="gallery-count" id="gallery-count" aria-hidden="true"></span>
-        <div class="gallery-buttons">
-          <button id="slide-prev" class="icon-btn" type="button" aria-label="Previous photo"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg></button>
-          <button id="slide-pause" class="icon-btn" type="button" aria-label="Pause slideshow"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><rect x="6" y="5" width="4" height="14" rx="1"/><rect x="14" y="5" width="4" height="14" rx="1"/></svg></button>
-          <button id="slide-next" class="icon-btn" type="button" aria-label="Next photo"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" aria-hidden="true"><path d="M9 5l7 7-7 7"/></svg></button>
+    <div class="home-media">
+      <div class="gallery" id="gallery" role="region" aria-roledescription="carousel" aria-label="Photos from the club" tabindex="0">
+        <div class="gallery-stage" id="gallery-stage">
+          <figure class="gallery-slide is-active">
+            <img src="https://drive.google.com/thumbnail?id=1SMoZbdfOXq2J6fJpLoSn2S8wQ4hiKrWk&amp;sz=w1600" alt="Photo from Harvard Fencing Club" width="1600" height="1067" fetchpriority="high" referrerpolicy="no-referrer">
+          </figure>
         </div>
+        <div class="gallery-controls" id="gallery-controls" hidden>
+          <span class="gallery-count" id="gallery-count" aria-hidden="true"></span>
+          <div class="gallery-buttons">
+            <button id="slide-prev" class="icon-btn" type="button" aria-label="Previous photo"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg></button>
+            <button id="slide-pause" class="icon-btn" type="button" aria-label="Pause slideshow"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><rect x="6" y="5" width="4" height="14" rx="1"/><rect x="14" y="5" width="4" height="14" rx="1"/></svg></button>
+            <button id="slide-next" class="icon-btn" type="button" aria-label="Next photo"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" aria-hidden="true"><path d="M9 5l7 7-7 7"/></svg></button>
+          </div>
+        </div>
+        <input class="gallery-scrub" id="gallery-scrub" type="range" min="1" max="1" value="1" step="1" aria-label="Scrub through photos" hidden>
+        <p class="sr-only" id="slide-announcement" role="status" aria-live="polite" aria-atomic="true"></p>
       </div>
-      <input class="gallery-scrub" id="gallery-scrub" type="range" min="1" max="1" value="1" step="1" aria-label="Scrub through photos" hidden>
-      <p class="sr-only" id="slide-announcement" role="status" aria-live="polite" aria-atomic="true"></p>
+      <p class="home-photo-meta"><a href="gallery.html">See all club photos in the Gallery →</a><span>Photos © Michel Tao 2026</span></p>
     </div>
   </main>

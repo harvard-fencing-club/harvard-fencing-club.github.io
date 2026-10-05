@@ -1,0 +1,24 @@
+---
+layout: default
+nav: gallery
+title: Gallery
+scripts: [photos, gallery]
+---
+  <main id="main">
+    <h1 class="sr-only">Gallery</h1>
+    <div class="page-body"><div class="wrap">
+      <h2 class="label section-title"><span>Club photos <span class="gallery-total" id="gallery-total"></span></span></h2>
+      <div class="photo-grid" id="photo-grid"></div>
+      <div class="grid-sentinel" id="grid-sentinel" aria-hidden="true"></div>
+      <noscript><p class="noscript-note">Turn on JavaScript to see the photo gallery.</p></noscript>
+    </div></div>
+
+    <div class="lightbox" id="lightbox" role="dialog" aria-modal="true" aria-label="Photo viewer" hidden>
+      <figure class="lb-stage"><img id="lb-img" alt="Photo from Harvard Fencing Club" referrerpolicy="no-referrer"></figure>
+      <p class="lb-count" id="lb-count" aria-live="polite"></p>
+      <div class="lb-strip" id="lb-strip" role="group" aria-label="Similar shots" hidden></div>
+      <button class="lb-btn lb-close" type="button" id="lb-close" aria-label="Close photo viewer"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg></button>
+      <button class="lb-btn lb-prev" type="button" id="lb-prev" aria-label="Previous photo"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg></button>
+      <button class="lb-btn lb-next" type="button" id="lb-next" aria-label="Next photo"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" aria-hidden="true"><path d="M9 5l7 7-7 7"/></svg></button>
+    </div>
+  </main>
