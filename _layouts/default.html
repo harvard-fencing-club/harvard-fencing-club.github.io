@@ -1,0 +1,34 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#a51c30">
+  {%- assign full_title = site.title %}{% if page.title %}{% assign full_title = page.title | append: " — " | append: site.title %}{% endif %}
+  {%- assign desc = page.description | default: site.description %}
+  {%- assign v = site.time | date: "%s" %}
+  <meta name="description" content="{{ desc | escape }}">
+  <meta property="og:title" content="{{ full_title | escape }}">
+  <meta property="og:description" content="{{ desc | escape }}">
+  <meta property="og:type" content="website">
+  <title>{{ full_title | escape }}</title>
+  <link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Graduate&family=Barlow+Semi+Condensed:wght@700&family=Barlow:wght@400;500;600;700;800&family=Geist+Mono:wght@500;600&display=swap">
+  <link rel="stylesheet" href="styles.css?v={{ v }}">
+  <script src="content.js?v={{ v }}" defer></script>
+  {%- for script in page.data_scripts %}
+  <script src="{{ script }}?v={{ v }}" defer></script>
+  {%- endfor %}
+  <script src="script.js?v={{ v }}" defer></script>
+  {%- for script in page.scripts %}
+  <script src="{{ script }}?v={{ v }}" defer></script>
+  {%- endfor %}
+</head>
+<body class="page-{{ page.nav }}">
+  <a class="skip-link" href="#main">Skip to content</a>
+{% include header.html %}
+{{ content }}
+</body>
+</html>

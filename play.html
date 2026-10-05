@@ -1,0 +1,50 @@
+---
+layout: default
+nav: play
+title: Play
+description: "Fence a quick bout against the computer. First to five touches."
+scripts: [game.js]
+---
+  <main id="main">
+    <h1 class="sr-only">Play</h1>
+    <div class="page-body"><div class="wrap game-shell">
+      <div>
+        <div class="game-stage" id="game-stage">
+          <canvas id="game-canvas" width="1280" height="640" aria-label="Fencing game. You are the red fencer on the left." role="img"></canvas>
+          <div class="game-overlay" id="game-overlay">
+            <h2 id="overlay-title">En garde</h2>
+            <p id="overlay-text">Fence the computer — first to five touches wins!</p>
+            <div class="difficulty" role="group" aria-label="Difficulty" id="difficulty">
+              <button type="button" data-level="0" aria-pressed="false">Novice</button>
+              <button type="button" data-level="1" aria-pressed="true">Intermediate</button>
+              <button type="button" data-level="2" aria-pressed="false">Club</button>
+              <button type="button" data-level="3" aria-pressed="false">Olympian</button>
+            </div>
+            <button class="btn btn-light" type="button" id="start-btn">Allez!</button>
+          </div>
+        </div>
+        <div class="touch-pad" id="touch-pad">
+          <button type="button" data-action="retreat" aria-label="Retreat">◀ Back</button>
+          <button type="button" data-action="advance" aria-label="Advance">Fwd ▶</button>
+          <button type="button" data-action="parry">Parry</button>
+          <button type="button" data-action="lunge" class="is-strong">Lunge</button>
+        </div>
+      </div>
+      <aside class="game-side">
+        <div class="side-block">
+          <h2 class="label section-title">Controls</h2>
+          <div class="keys">
+            <div>Advance <span><kbd>D</kbd> <kbd>→</kbd></span></div>
+            <div>Retreat <span><kbd>A</kbd> <kbd>←</kbd></span></div>
+            <div>Lunge <span><kbd>Space</kbd> <kbd>J</kbd></span></div>
+            <div>Parry <span><kbd>K</kbd> <kbd>↓</kbd></span></div>
+          </div>
+        </div>
+        <div class="side-block">
+          <h2 class="label section-title">Your record</h2>
+          <p class="record" id="record">0–0</p>
+          <p class="event-sub" id="record-note">Won–Lost</p>
+        </div>
+      </aside>
+    </div></div>
+  </main>

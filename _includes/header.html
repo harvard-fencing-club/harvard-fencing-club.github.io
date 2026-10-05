@@ -1,0 +1,14 @@
+  <header class="site-header">
+    <div class="wrap header-inner">
+      <a class="brand" href="./" aria-label="Harvard Fencing Club home">
+        <svg viewBox="0 0 48 48" fill="none" aria-hidden="true"><path d="M10 6 38 40M38 6 10 40M8 29l12 10M28 39l12-10" stroke="currentColor" stroke-width="2.4"/><path d="m11 38-5 6m31-6 5 6" stroke="currentColor" stroke-width="3.4"/></svg>
+        <span>Harvard Fencing Club<small>Cambridge, MA</small></span>
+      </a>
+      <button class="menu-toggle" type="button" aria-expanded="false" aria-controls="main-nav" aria-label="Open navigation"><span></span><span></span></button>
+      <nav class="main-nav" id="main-nav" aria-label="Main">
+        {%- for item in site.nav %}
+        <a href="{{ item.href }}"{% if page.nav == item.key %} aria-current="page"{% endif %}>{{ item.label }}</a>
+        {%- endfor %}
+      </nav>
+    </div>
+  </header>
