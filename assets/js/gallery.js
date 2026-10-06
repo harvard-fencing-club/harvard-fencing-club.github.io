@@ -36,7 +36,9 @@
   function planSizes() {
     columns = getComputedStyle(grid).gridTemplateColumns.split(" ").filter(Boolean).length || 1;
     const n = groups.length;
-    sizes = groups.map((_, i) => (columns >= 3 && i % 10 === 0 ? "big" : ""));
+    const featured = new Set(source.featured || []);
+    const isFeatured = (group) => group.some((photo) => featured.has(photo));
+    sizes = groups.map((group, i) => (columns >= 3 && (i % 10 === 0 || isFeatured(group)) ? "big" : ""));
     const cells = n + 3 * sizes.filter((size) => size === "big").length;
     let missing = (columns - (cells % columns)) % columns;
     // Prefer widening tiles halfway between features, working back from the end.
@@ -58,16 +60,14 @@
         tile.classList.toggle("big", sizes[i] === "big");
         tile.classList.toggle("wide", sizes[i] === "wide");
       });
+      relabel();
     }, 150);
   });
 
   function makeTile(group, i) {
     const size = sizes[i];
     const tile = make("button", { className: `photo-tile${size ? ` ${size}` : ""}`, type: "button" });
-    tile.setAttribute(
-      "aria-label",
-      group.length > 1 ? `Open collection ${i + 1}: ${group.length} similar photos` : `Open photo ${i + 1}`,
-    );
+    tile.dataset.group = String(i);
     const image = make("img", {
       alt: "",
       loading: "lazy",
@@ -91,6 +91,31 @@
     grid.append(...tiles);
     rendered += tiles.length;
     if (rendered >= groups.length) moreObserver?.disconnect();
+    relabel();
+  }
+
+  // Collections are numbered in the order they appear on screen (left to right, top to
+  // bottom). Big tiles can shift a few smaller ones into earlier gaps, so this is read
+  // from the actual layout rather than the list order.
+  function readingOrder() {
+    const shown = [...grid.querySelectorAll(".photo-tile")]
+      .filter((tile) => tile.offsetParent !== null)
+      .sort((a, b) => a.offsetTop - b.offsetTop || a.offsetLeft - b.offsetLeft)
+      .map((tile) => Number(tile.dataset.group));
+    const notYetShown = groups.map((_, i) => i).slice(rendered);
+    return shown.concat(notYetShown);
+  }
+  function relabel() {
+    const order = readingOrder();
+    order.forEach((groupIndex, position) => {
+      const tile = grid.querySelector(`[data-group="${groupIndex}"]`);
+      if (!tile) return;
+      const size = groups[groupIndex].length;
+      tile.setAttribute(
+        "aria-label",
+        size > 1 ? `Open collection ${position + 1}: ${size} similar photos` : `Open photo ${position + 1}`,
+      );
+    });
   }
   const moreObserver =
     "IntersectionObserver" in window
@@ -109,9 +134,11 @@
   const box = $("#lightbox"),
     boxImage = $("#lb-img"),
     strip = $("#lb-strip");
-  let g = -1,
-    m = 0,
-    opener = null; // current collection, current photo in it
+  let order = [], // collections in on-screen order
+    p = -1, // position in that order
+    g = -1, // current collection (index into groups)
+    m = 0, // current photo within it
+    opener = null;
 
   const preload = (id) => {
     const image = new Image();
@@ -127,13 +154,14 @@
           make("img", { alt: "", loading: "lazy", referrerPolicy: "no-referrer", src: photoUrl(id, 160) }),
         );
         thumb.setAttribute("aria-label", `Similar shot ${k + 1} of ${group.length}`);
-        thumb.addEventListener("click", () => show(g, k));
+        thumb.addEventListener("click", () => show(p, k));
         return thumb;
       }),
     );
   }
-  function show(groupIndex, member = 0) {
-    const next = (groupIndex + groups.length) % groups.length;
+  function show(position, member = 0) {
+    p = (position + order.length) % order.length;
+    const next = order[p];
     if (next !== g) buildStrip(groups[next]);
     g = next;
     const group = groups[g];
@@ -144,8 +172,8 @@
     boxImage.src = photoUrl(group[m], 1600);
     $("#lb-count").textContent =
       group.length > 1
-        ? `Collection ${g + 1} / ${groups.length} · photo ${m + 1} of ${group.length}`
-        : `Collection ${g + 1} / ${groups.length}`;
+        ? `Collection ${p + 1} / ${order.length} · photo ${m + 1} of ${group.length}`
+        : `Collection ${p + 1} / ${order.length}`;
 
     strip.hidden = group.length < 2;
     box.classList.toggle("has-strip", group.length > 1);
@@ -153,15 +181,16 @@
     strip.children[m]?.scrollIntoView({ block: "nearest", inline: "center" });
 
     if (group[m + 1]) preload(group[m + 1]);
-    preload(groups[(g + 1) % groups.length][0]);
-    preload(groups[(g - 1 + groups.length) % groups.length][0]);
+    preload(groups[order[(p + 1) % order.length]][0]);
+    preload(groups[order[(p - 1 + order.length) % order.length]][0]);
   }
   function openViewer(i) {
     opener = document.activeElement;
+    order = readingOrder();
     g = -1;
     box.hidden = false;
     document.documentElement.classList.add("viewer-open");
-    show(i, 0);
+    show(Math.max(0, order.indexOf(i)), 0);
     requestAnimationFrame(() => box.classList.add("is-open"));
     $("#lb-close").focus();
   }
@@ -175,8 +204,8 @@
   }
 
   $("#lb-close").addEventListener("click", closeViewer);
-  $("#lb-prev").addEventListener("click", () => show(g - 1));
-  $("#lb-next").addEventListener("click", () => show(g + 1));
+  $("#lb-prev").addEventListener("click", () => show(p - 1));
+  $("#lb-next").addEventListener("click", () => show(p + 1));
   box.addEventListener("click", (event) => {
     if (event.target === box || event.target.classList.contains("lb-stage")) closeViewer();
   });
@@ -184,10 +213,10 @@
     if (box.hidden) return;
     const keys = {
       Escape: () => closeViewer(),
-      ArrowRight: () => show(g + 1),
-      ArrowLeft: () => show(g - 1),
-      ArrowDown: () => show(g, m + 1),
-      ArrowUp: () => show(g, m - 1),
+      ArrowRight: () => show(p + 1),
+      ArrowLeft: () => show(p - 1),
+      ArrowDown: () => show(p, m + 1),
+      ArrowUp: () => show(p, m - 1),
     };
     if (keys[event.key]) {
       event.preventDefault();
@@ -218,7 +247,7 @@
       const touch = event.changedTouches[0];
       const dx = touch.clientX - swipeStart.x,
         dy = touch.clientY - swipeStart.y;
-      if (Math.abs(dx) > 50 && Math.abs(dx) > Math.abs(dy) * 1.4) show(g + (dx < 0 ? 1 : -1));
+      if (Math.abs(dx) > 50 && Math.abs(dx) > Math.abs(dy) * 1.4) show(p + (dx < 0 ? 1 : -1));
       else if (dy > 90 && Math.abs(dy) > Math.abs(dx) * 1.4) closeViewer();
       swipeStart = null;
     },

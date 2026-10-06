@@ -32,31 +32,26 @@ FOLDERS = {
 # Hand-picked front-page photos (Drive file IDs). While this list has IDs, the home
 # slideshow uses exactly these; empty it to use the "home" folder instead.
 HOME_PICKS = [
-    "1SMoZbdfOXq2J6fJpLoSn2S8wQ4hiKrWk",
     "1uNAjK2biGJz50iGc55AELZlrCsjtFexu",
-    "1Rg_6yTAkBL3NXSNgm5Ys0k0UlKeTj4Sw",
     "1cVPUsx_StoNWi3T8z0M8QdASEkGf3lwq",
-    "19P0fmd_HszGIb78EYl5kRWNT1zpHNeYC",
-    "1NBTfSixallUVWHxY6ovwr_7CmFVc_aag",
-    "1otyiC5Mo-gZvNklIhZ8oUa3MsvZNBs7M",
     "1nC7aQkbd44ZkyghNryxsWmEKHiHGgN92",
-    "1R_86qsXOn7DSoB1Vn15fRL5aUILblXsM",
     "15THr_xHuBN7XVU_Es8eLow3V_zWNq--l",
-    "1PCwf4SA3xKxB3pC4ABswgqsFbADyijZH",
-    "1lM9eorWw0C_Rn1gu1ZuytVaO1syStu82",
-    "1MoNxy5uupg4mvFOwUaYZMv_TLgPBtf0O",
-    "1So_jtfITF2CkSgeQSzVyHunYy1Mvhuk3",
     "1HoD2VlwGCiCyhsARq8HuSVgcBathaWgf",
     "1tNSrNM5hxqAe4O0nPamMf4faY26UBLIl",
-    "1wIVR6WbaJ4Qw4YrXMqs1x3XkQyeCLEU0",
     "1vzUr5sxxq9Yd90YowXf1j1hThZ8nOxT5",
-    "1EbVN7pdt9cVgnNz324WLZBxO31or-Oir",
     "1IQo48v8QRMSJLjla_EHsyq5GbKJAYtWA",
     "1RyErPTvLXRivzPNhK3F0a0mA4i3MjvKm",
-    "1wDIMhNFtUeRcuOygfORaiSKkKsLAIJxL",
-    "18yqkQ6SVDLrU_Bpq4lFjjZ-gmCWFn26u",
     "1tmNueqYMcCXg71fHvEV8A0UBL5_erh1t",
-    "1l1LFjG80Hnpwu60YcS1mTFME0P479877",
+    "1NhzNBfotaiFFNy-9uPrNs2pcx7e3255-",
+    "1L9oJ6nCFRuM8LVLzt4wDrHPgU2BKKX7n",
+    "1WeYvTPg2uPecUpaDwi-xhyXnprJQMDDx",
+    "1pbetpKT6Ogdgyvg5fjW-ywDaZ_h8tkyv",
+    "1Pbq_Pj-hQjpnfUZQi2PnLKPoCiXRHutG",
+    "1snwDOIQkOzIOREJA-eQr5CP76sdtSPty",
+    "1_m9IlW0s1TRfaxxq8GDbkT5pH7-u0S4N",
+    "116Jy_ewyK9fMxGP8YJ1adfWezHilNodK",
+    "1AnyrpwTdvRRIk9M8l3NQP9Y1VcjAW507",
+    "1Y141_aDadYoRcpJCSmA4npSVtLFTbARV",
 ]
 # Optional framing for the slideshow crop ("x% y%"). Default: centre for wide photos,
 # upper portion (50% 20%) for tall ones.
@@ -65,6 +60,22 @@ HOME_FOCUS = {
     "1BEYOVwVEfWS-uwsxrLGd5UyYXR-F0maq": "60% 50%",  # fencer on the right
     "1uNAjK2biGJz50iGc55AELZlrCsjtFexu": "50% 38%",  # tall: fencer lying on the strip
 }
+
+# Gallery collections to always show as big tiles (any photo ID from the collection).
+FEATURED = [
+    "1NhzNBfotaiFFNy-9uPrNs2pcx7e3255-",
+]
+
+# Manual splits for the Gallery: each entry splits one collection into the listed
+# parts (photo IDs), kept together in that order where the collection was.
+SPLITS = [
+    [
+        ["1NtRtb90vjZ8DFvFDnAD8LC5K-yicxnCw", "1snwDOIQkOzIOREJA-eQr5CP76sdtSPty", "1OO2zNkAArM7I5P5ltZDayFKoXor1faPf"],
+        ["1_m9IlW0s1TRfaxxq8GDbkT5pH7-u0S4N"],
+        ["1uTw-_1UE3fN42ky0PJ2Q4OQ-cbfAfVPo", "16Ej6DdodVNvvn9ALQgwGXHzWaIUbd7ZW", "18sMSRqD0FASxmzjFYdeVRxWbWV-FCk6Q", "19BpdunZYAlx4EoegF2O7sNVv-o2fI6Cz", "1wcPfS7FoFTJnxYc8eS-VJqrpBZa-tZfk", "1qeOmnUB0qbEJckbvgmzaWsdeSNNs6IWN", "1jrVd5tcWiTDHBI_nV2QVZCMA_qYc_CLT", "1Fq3Tx_CeOoixdX_6QYpPqGKajW8FZbdE"],
+    ],
+]
+
 # Manual merges for the Gallery: each entry lists photo IDs (any photo from each
 # collection) whose collections should be combined into one. Stored by photo ID,
 # so merges survive reruns and renumbering.
@@ -86,6 +97,7 @@ MERGES = [
     ["1K3y0DzXVWGGnUImM5qAhWNxZY4EY-FhN", "1PCwf4SA3xKxB3pC4ABswgqsFbADyijZH"],
 ]
 IMAGE_EXTENSIONS = {"jpg", "jpeg", "png", "webp", "heic", "gif"}
+NEWEST_FIRST = True        # Gallery shows the most recently added collections first
 TARGET_GROUPS = 95          # aim for roughly this many gallery "collections"
 GROUP_RANGE = (80, 110)     # acceptable range
 
@@ -191,6 +203,28 @@ def apply_merges(groups):
 
 
 data["gallery"]["groups"] = apply_merges(data["gallery"]["groups"])
+if NEWEST_FIRST:
+    data["gallery"]["groups"].reverse()  # the Drive folder lists photos oldest first
+
+
+def apply_splits(groups):
+    """Replace a collection with the parts listed in SPLITS (photos not listed stay in the last part)."""
+    for parts in SPLITS:
+        listed = {photo for part in parts for photo in part}
+        hit = next((k for k, group in enumerate(groups) if set(group) & listed), None)
+        if hit is None:
+            continue
+        leftover = [photo for photo in groups[hit] if photo not in listed]
+        present = set(groups[hit])
+        new_parts = [[photo for photo in part if photo in present] for part in parts]
+        new_parts[-1] += leftover
+        groups[hit:hit + 1] = [part for part in new_parts if part]
+    return groups
+
+
+data["gallery"]["groups"] = apply_splits(data["gallery"]["groups"])
+all_gallery = set(data["gallery"]["ids"])
+data["gallery"]["featured"] = [photo for photo in FEATURED if photo in all_gallery]
 print(f"gallery: {len(data['gallery']['groups'])} groups of similar photos")
 
 OUTPUT = pathlib.Path(__file__).resolve().parent.parent / "assets" / "js" / "photos.js"
