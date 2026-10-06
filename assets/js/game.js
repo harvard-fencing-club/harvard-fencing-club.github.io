@@ -19,7 +19,11 @@
  *    pauses after advancing, parries, or a lunge finishes without a touch.
  *    Referees are strict here: only if both lunges start within 40 ms (boxSimul) is it
  *    simultaneous (no point). Outside the first action, it's simply simultaneous.
- *  - A parried or missed attack loses its priority.
+ *  - A parried or missed attack loses its priority: an attack that reaches full extension
+ *    without landing has fallen short, so an immediate counter after a distance pull has the
+ *    right of way over a blade left out (a remise). The same if the counter starts in the
+ *    last SHORT_WINDOW ms of the attack, once you've pulled out of its full reach: it has
+ *    already fallen short. Earlier than that, it's a counter-attack and the attack wins.
  *
  * Foil right of way: as sabre, but on the first action in the box the lunges can start up to
  * 90 ms apart and still be simultaneous (sabre: 40), while outside the box attacks must start
@@ -59,6 +63,10 @@
     STUN = 600,
     BREAK = 120, // pausing or retreating this long ends an attack in progress
     PRIORITY = 900, // how long a successful parry keeps the right of way
+    MISS_GRACE = 0, // an attack still short this long after full extension has missed
+    SHORT_WINDOW = 100, // out of reach, a counter in the attack's last this-many ms beats it
+    FEINT = 200, // a false attack: a quick half-extension and back, which can't score
+    FEINT_DEPTH = 0.4,
     BLADE_LENGTH = 108;
   // Rules and look of each weapon. target/offTarget: how far in front of the body a touch
   // counts / is off target. Blade angles are degrees above horizontal: en garde, on the move,
@@ -81,6 +89,9 @@
       deflect: 62, // knocked up and out of line, not thrown back
       parryHand: [58, -150],
       parryTip: [95, -254], // blade raised to block the cut
+      // Olympian, when parried: [ms before stepping back, step speed], so only a riposte
+      // within about 75 ms still lands.
+      parriedBack: [40, 1],
     },
     foil: {
       name: "Foil",
@@ -100,6 +111,7 @@
       deflect: 42,
       parryHand: [62, -150],
       parryTip: [120, -244], // quarte: point up, blade across the chest
+      parriedBack: [40, 1],
     },
     epee: {
       name: "Épée",
@@ -113,6 +125,7 @@
       deflect: -16, // pushed down and out of line
       parryHand: [70, -150],
       parryTip: [172, -196], // sixte: a small opposition, point still forward
+      parriedBack: [0, 1.1], // the riposte can reach the hand, so get out sooner and faster
       advanceAttack: false, // no right of way: only the timing of the touches matters
       strikeInto: [284, 27], // computer: distance to attack into an advance (+ random spread)
     },
@@ -247,7 +260,11 @@
     restartAt = null; // after an off-target touch, play restarts here (the fencers' midpoint)
   // AI "brains": the computer always has one. (Tests can also give the player one, to
   // play two levels against each other.)
-  const newBrain = (lvl) => ({ level: lvl, think: 0, reactAt: 0, moveUntil: 0 });
+  const newBrain = (lvl) => ({ level: lvl, think: 0, reactAt: 0, moveUntil: 0, defend: false, stepUntil: 0, calmUntil: 0, ...freshRead() });
+  // Olympian's read of the opponent: how often they pull distance or parry when it attacks.
+  function freshRead() {
+    return { read: { pull: 0.2, parry: 0.2 }, probe: null, feintAt: 0 };
+  }
   const brains = { cpu: newBrain(level), player: null };
   const brainOf = (who) => brains[who.side];
   const held = { advance: false, retreat: false };
@@ -292,10 +309,15 @@
     firstAction = true;
     pending = [];
     lamps = { player: false, cpu: false };
-    for (const brain of [brains.cpu, brains.player]) if (brain) Object.assign(brain, { reactAt: 0, moveUntil: 0 });
+    for (const brain of [brains.cpu, brains.player])
+      if (brain) {
+        finishProbe(brain);
+        Object.assign(brain, { reactAt: 0, moveUntil: 0, defend: false, stepUntil: 0, calmUntil: 0, lastAction: now });
+      }
   }
   function startMatch() {
     player.score = cpu.score = 0;
+    Object.assign(brains.cpu, freshRead()); // a new opponent to read
     restartAt = null;
     resetPositions();
     overlay.hidden = true;
@@ -309,6 +331,7 @@
   const canAct = (who) => phase === "fencing" && who.state === "idle";
   function lunge(who, prep = 0) {
     if (!canAct(who)) return;
+    fallenShort(opponent(who), who);
     const riposte = now < who.riposteUntil;
     Object.assign(who, {
       state: prep && !riposte ? "prep" : "lunge",
@@ -326,9 +349,19 @@
     const foe = brainOf(opponent(who));
     if (foe) foe.reactAt = now + foe.level.react * (0.8 + Math.random() * 0.4);
   }
+  // A false attack (only the computer uses it): looks like the start of an attack, to draw a
+  // response, but can't land. Opponents' AIs react to it as they would to an attack.
+  function feint(who) {
+    if (!canAct(who)) return;
+    Object.assign(who, { state: "feint", t: 0, move: 0 });
+    const foe = brainOf(opponent(who));
+    if (foe) foe.reactAt = now + foe.level.react * (0.8 + Math.random() * 0.4);
+  }
   function parry(who) {
-    if (canAct(who)) firstAction = false;
-    if (canAct(who)) Object.assign(who, { state: "parry", t: 0, move: 0, forwardSince: null, attackStart: Infinity });
+    // A feint is only half an extension, so you can parry straight out of it.
+    if (!canAct(who) && !(phase === "fencing" && who.state === "feint")) return;
+    firstAction = false;
+    Object.assign(who, { state: "parry", t: 0, e: 0, move: 0, forwardSince: null, attackStart: Infinity });
   }
 
   function update(dt) {
@@ -358,6 +391,8 @@
       if (phase === "fencing") {
         checkHits(player);
         checkHits(cpu);
+        // Checked after the hits, so a touch landing in this same frame keeps its priority.
+        [player, cpu].forEach(checkMiss);
         if (pending.length && now >= resolveAt) resolve();
         // Off the strip: the front foot has gone back past the red line.
         if (player.x + FRONT_FOOT < RED_L) award(cpu, "Off the strip");
@@ -366,6 +401,12 @@
     }
   }
 
+  // Moving its feet: normally only when idle. Olympian can also step back while its blade is
+  // knocked aside by a parry, so the riposte falls short.
+  const stepping = (who) =>
+    phase === "fencing" &&
+    who.move !== 0 &&
+    (who.state === "idle" || (who.state === "stunned" && who.move === -1 && !!brainOf(who)?.level.smart));
   function step(who, dt) {
     who.t += dt;
     // Blade angle: en garde, on the move, and fully extended (level) at the end of a lunge.
@@ -373,7 +414,7 @@
     const target =
       who.state === "stunned"
         ? weapon.deflect
-        : who.state === "lunge"
+        : who.state === "lunge" || who.state === "feint"
           ? lerp(weapon.moving, weapon.lunge, who.e)
           : who.state === "prep" || moving
             ? weapon.moving
@@ -393,8 +434,9 @@
         who.forwardSince = null;
       }
     }
-    if (who.state === "idle" && phase === "fencing" && who.move) {
-      const speed = (who.move > 0 ? 240 : 270) * (brainOf(who)?.level.speed ?? 1);
+    if (stepping(who)) {
+      const jump = who.state === "stunned" ? weapon.parriedBack[1] : 1; // a quick step back when parried
+      const speed = (who.move > 0 ? 240 : 270) * (brainOf(who)?.level.speed ?? 1) * jump;
       who.x += (who.f * who.move * speed * dt) / 1000;
       who.walk += (dt / 1000) * 11;
     }
@@ -405,10 +447,6 @@
       if (!weapon.advanceAttack) who.attackStart = now;
     }
     if (who.state === "lunge") {
-      if (!who.hitDone && who.t > who.extend + HOLD) {
-        who.attackStart = Infinity; // attack fell short
-        firstAction = false;
-      }
       if (who.t < who.extend) who.e = ease(who.t / who.extend);
       else if (who.t < who.extend + HOLD) who.e = 1;
       else if (who.t < who.extend + HOLD + RECOVER) who.e = 1 - ease((who.t - who.extend - HOLD) / RECOVER);
@@ -417,6 +455,11 @@
         who.e = 0;
         who.t = 0;
       }
+    }
+    if (who.state === "feint") {
+      const half = FEINT / 2;
+      who.e = FEINT_DEPTH * (who.t < half ? ease(who.t / half) : 1 - ease((who.t - half) / half));
+      if (who.t >= FEINT) Object.assign(who, { state: "idle", t: 0, e: 0 });
     }
     if (who.state === "parry") {
       who.p = who.t < 60 ? who.t / 60 : who.t > PARRY - 100 ? Math.max(0, (PARRY - who.t) / 100) : 1;
@@ -436,6 +479,29 @@
     }
   }
 
+  // Their attack can't reach where I am even at full extension (I've pulled distance), so it
+  // has already fallen short: it loses priority now, and my counter has the right of way.
+  // Its point may still touch as my counter carries me onto it, but only as a remise.
+  function fallenShort(attacker, me) {
+    // Only near the end of the attack: a counter while it's still developing is a counter-attack.
+    if (attacker.state !== "lunge" || attacker.hitDone || attacker.t < attacker.extend - SHORT_WINDOW) return;
+    if (!Number.isFinite(attacker.attackStart)) return;
+    // If I'm advancing, my own step was bringing me onto it (e.g. both out of the box): not short.
+    if (me.forwardSince !== null) return;
+    const maxTip = attacker.x + attacker.f * (180 + 95); // see tipDx
+    const reachable = bodyX(me) + me.f * (weapon.offTarget || weapon.target); // incl. foil arm
+    if ((maxTip - reachable) * attacker.f >= 0) return; // still able to land
+    attacker.attackStart = Infinity;
+    firstAction = false;
+  }
+  // Fully extended without landing: the attack has failed (fallen short) and loses its
+  // priority. A blade left out can still touch, but only as a remise without priority.
+  function checkMiss(who) {
+    if (who.state !== "lunge" || who.hitDone || who.t <= who.extend + MISS_GRACE) return;
+    if (!Number.isFinite(who.attackStart)) return;
+    who.attackStart = Infinity;
+    firstAction = false;
+  }
   function checkHits(attacker) {
     if (attacker.state !== "lunge" || attacker.hitDone || attacker.t > attacker.extend + HOLD) return;
     const target = opponent(attacker);
@@ -556,26 +622,34 @@
   function runAi(me, brain) {
     // gap: distance measured against a sabre-length reach, so the same distances work in épée.
     const foe = opponent(me), lvl = brain.level, gap = gapOf(me) - reach();
+    // Olympian: when parried, step straight back out of the riposte's reach (after a split-
+    // second, so only a very fast riposte still lands).
+    if (lvl.smart && me.state === "stunned") {
+      // Just far enough that the riposte can't reach, not a run to the end of the strip.
+      me.move = me.t >= weapon.parriedBack[0] && gap < 335 ? -1 : 0;
+      brain.calmUntil = now + 600; // then settle back into its footwork rather than charging
+    }
     // Never back off the end of the strip.
     if (me.move === -1 && roomBehind(me) < 30) me.move = 0;
     // React to an incoming attack: parry, or step back.
     if (brain.reactAt && now >= brain.reactAt) {
       brain.reactAt = 0;
-      if (me.state === "idle") {
+      if (lvl.smart) brain.defend = true;
+      else if (me.state === "idle") {
         const roll = Math.random();
-        if (lvl.smart && gap > 285 && roomBehind(me) > 120) {
-          me.move = -1; // pull distance so the attack falls short
-          brain.moveUntil = now + 260;
-        } else if (roll < lvl.parry) parry(me);
+        if (roll < lvl.parry) parry(me);
         else if (roll < lvl.parry + (1 - lvl.parry) / 2 && roomBehind(me) > 40) {
           me.move = -1;
           brain.moveUntil = now + 300;
         }
       }
     }
+    if (lvl.smart) watch(me, brain);
+    const ready = me.state === "idle" || me.state === "feint";
+    if (lvl.smart && brain.defend && ready && defend(me, brain, gap)) return;
     if (me.state !== "idle" || now < brain.think || now < brain.moveUntil) return;
     brain.think = now + lvl.think * (0.7 + Math.random() * 0.6);
-    if (lvl.smart) return runSmartAi(me, gap);
+    if (lvl.smart) return runSmartAi(me, gap, brain);
     // Stronger levels mostly avoid counter-attacking into an advance (it loses on right of way).
     // In foil and épée an advance is only preparation: they hit it as it comes into reach.
     if (foe.state === "idle" && foe.forwardSince !== null && Math.random() < lvl.rowSense) {
@@ -612,51 +686,162 @@
   }
 
   // Olympian: plays each weapon's rules.
-  function runSmartAi(me, gap) {
+  // How long a lunge from this (sabre-reach) gap takes to reach the target.
+  function contactMs(gap) {
+    const e = (gap - 25 - 180) / 95; // extension needed (see tipDx)
+    if (e <= 0) return 0;
+    if (e >= 1) return Infinity;
+    return EXTEND * (1 - Math.cbrt(1 - e));
+  }
+  // Olympian reads the opponent: after each of its attacks or feints, did they pull distance
+  // (step back) or parry? Recent answers count most.
+  function watch(me, brain) {
+    const foe = opponent(me);
+    const acting = me.state === "prep" || me.state === "lunge" || me.state === "feint";
+    if (acting) brain.lastAction = now;
+    if (acting && !brain.probe) brain.probe = { since: now, pulled: false, parried: false };
+    const probe = brain.probe;
+    if (!probe) return;
+    if (foe.state === "idle" && foe.move === -1) probe.pulled = true;
+    if (foe.state === "parry") probe.parried = true;
+    if (!acting && now - probe.since > 450) finishProbe(brain);
+  }
+  function finishProbe(brain) {
+    const probe = brain.probe;
+    if (!probe) return;
+    const read = brain.read;
+    read.pull += ((probe.pulled ? 1 : 0) - read.pull) * 0.35;
+    read.parry += ((probe.parried ? 1 : 0) - read.parry) * 0.35;
+    brain.probe = null;
+  }
+  // Olympian on defence: step back with the attack, and parry just before it would land if
+  // it can still reach; if it's going to fall short, let it. Returns false once it's over.
+  function defend(me, brain, gap) {
+    const foe = opponent(me);
+    const live = foe.state === "prep" || (foe.state === "lunge" && !foe.hitDone && foe.t <= foe.extend + HOLD);
+    if (!live) {
+      brain.defend = false;
+      return false;
+    }
+    // Sabre/foil: if my own attack clearly started first (outside the box), finish it instead.
+    const mine = weapon.rightOfWay && !(weapon.box && firstAction) && me.forwardSince !== null;
+    if (mine && me.state === "idle" && foe.attackStart - me.forwardSince > weapon.simul + 30 && gap <= 320) {
+      brain.defend = false;
+      lunge(me, 0);
+      return true;
+    }
+    me.move = roomBehind(me) > 60 ? -1 : 0;
+    const front = bodyX(me) + me.f * weapon.target;
+    const tipNow = foe.x + foe.f * tipDx(foe),
+      tipMax = foe.x + foe.f * 275;
+    const reaches = (front - tipMax) * foe.f <= 8;
+    const close = (front - tipNow) * foe.f < 70 || (foe.state === "lunge" && foe.t > foe.extend - 90);
+    if (reaches && close) {
+      brain.defend = false;
+      if (Math.random() < brain.level.parry) parry(me);
+    }
+    return true;
+  }
+  // Olympian in open play: short, uneven steps in and out of distance, drifting forward.
+  function footwork(me, gap, brain) {
+    if (now < brain.stepUntil) return;
+    const room = roomBehind(me) > 70;
+    const r = Math.random();
+    // Just recovered from being parried: hold at the edge of distance, no charging back in.
+    if (now < brain.calmUntil) me.move = gap < 300 && room ? -1 : gap > 360 && r < 0.5 ? 1 : 0;
+    else if (gap > 370) me.move = 1;
+    else if (gap < 295) me.move = room ? -1 : 0;
+    else me.move = r < 0.45 ? 1 : r < 0.8 && room ? -1 : 0;
+    brain.stepUntil = now + 120 + Math.random() * 160;
+  }
+  // Olympian fences with intention:
+  //  - first intention, a real attack, when they can't get away: very close, cornered at the
+  //    end of the strip, or committed (lunging, recovering, parried);
+  //  - second intention against fencers who pull distance and counter: a false attack (feint)
+  //    to draw the pull and the counter, which it then parries and ripostes;
+  //  - third intention, reading their intention: if they bait it in to pull and counter, it
+  //    answers the bait with the feint instead of the real attack; if they parry, it feints to
+  //    draw the parry and then attacks as the parry ends.
+  function runSmartAi(me, gap, brain) {
     const foe = opponent(me);
     const nearEnd = roomBehind(me) < 70;
+    const cornered = roomBehind(foe) < 70;
+    const puller = brain.read.pull > 0.4,
+      parrier = brain.read.parry > 0.4;
+    const mayFeint = foe.state === "idle" && !cornered && now - brain.feintAt > 700;
+    const falseAttack = () => {
+      brain.feintAt = now;
+      feint(me);
+    };
     const foeAdvancing = foe.state === "idle" && foe.forwardSince !== null;
     const foeShort = foe.state === "lunge" && foe.t > foe.extend + HOLD;
-    if (foeShort) {
-      // Their attack fell short: step in and hit during the recovery.
+    // Only strike from long range while they're actually stepping in (closing the distance);
+    // if they've stopped, a long lunge lands late and can be parried.
+    const closing = foe.move === 1;
+    if (foeShort || foe.state === "stunned") {
+      // Their attack fell short, or was parried: hit during the recovery. (Don't chase it
+      // straight after being parried itself.)
       if (gap <= 300) return lunge(me, 0);
+      if (now < brain.calmUntil) return footwork(me, gap, brain);
+      me.move = 1;
+      return;
+    }
+    if (foe.state === "parry") {
+      // Never attack into a live parry: time the attack to land just after the parry's
+      // active window, while they're still recovering from it.
+      const lands = foe.t + contactMs(gap);
+      if (lands >= PARRY_ACTIVE + 10 && lands <= PARRY - 20) return lunge(me, 0);
+      if (now < brain.calmUntil) return footwork(me, gap, brain);
+      me.move = gap > 300 ? 1 : 0;
+      return;
+    }
+    // Close enough that the touch lands before anyone can react: take the attack.
+    if (gap <= 255) return lunge(me, 0);
+    // Cornered at the end of the strip, they can't pull: attack.
+    if (cornered && gap <= 300) return lunge(me, 0);
+    // They parry: feint to draw the parry, then hit as it ends (see the parry case above).
+    if (parrier && mayFeint && gap <= 300) return falseAttack();
+    // They pull distance, or nothing has happened for a while: take the initiative and press
+    // them steadily towards the end of the strip.
+    if (((puller && foe.move === -1) || now - brain.lastAction > 1500) && !nearEnd) {
       me.move = 1;
       return;
     }
     if (!weapon.advanceAttack) {
-      // Foil and épée: whoever extends first has it. Hit their advance (preparation) the
-      // moment it comes into reach; otherwise close in and strike from close range.
-      if (gap <= (foeAdvancing ? 305 : 255)) return lunge(me, 0);
-      me.move = foeAdvancing && gap < 345 ? 0 : 1;
-      return;
-    }
-    if (foeAdvancing) {
+      // Épée: hit their advance (preparation) the moment it comes into reach.
+      if (foeAdvancing && closing && gap <= 305) {
+        if (!puller) return lunge(me, 0);
+        if (mayFeint) return falseAttack();
+      }
+    } else if (foeAdvancing) {
       // Out of the box together: keep coming and beat them to the final action.
       if (me.forwardSince !== null) {
-        if (gap <= 320) return lunge(me, 0);
+        // Their step in may be a bait to draw the attack and pull away: never take it with a
+        // real attack. Answer it with a feint, or hold and let them come closer.
+        if (closing && gap <= 320 && gap > 255 && puller && !cornered) {
+          if (mayFeint) return falseAttack();
+          me.move = 0;
+          return;
+        }
+        if (gap <= (closing ? 320 : 255)) return lunge(me, 0);
         me.move = 1;
         return;
       }
-      // Cornered: hold and parry, only striking from very close.
+      // Cornered: hold, ready to parry.
       if (nearEnd) {
-        if (gap <= 255) return lunge(me, 0);
         me.move = 0;
         return;
       }
-      // From a distance, go forward to meet them and take the attack in the box.
+      // From a distance, go forward to meet them and take the attack.
       if (gap > 345) {
         me.move = 1;
         return;
       }
-      // Caught up close without the attack: keep just outside their reach so any attack
-      // falls short (never counter into it).
+      // Up close without the attack: stay just outside their reach (never counter into it).
       me.move = gap < 335 ? -1 : 0;
       return;
     }
-    // They've stopped or are stepping back: keep advancing (holding the attack) and finish
-    // from close range, where the touch lands faster than anyone can react with a parry.
-    if (gap <= 255) return lunge(me, 0);
-    me.move = 1;
+    footwork(me, gap, brain);
   }
 
   // ---------- Drawing ----------
@@ -691,7 +876,7 @@
     const j = {};
     for (const k in STANCE)
       j[k] = [lerp(STANCE[k][0], LUNGE[k][0], who.e), lerp(STANCE[k][1], LUNGE[k][1], who.e)];
-    if (who.state === "idle" && who.move && phase === "fencing") {
+    if (stepping(who)) {
       const bob = Math.sin(who.walk * 2);
       j.ff[0] += bob * 9;
       j.ff[1] -= Math.max(0, bob) * 8;
