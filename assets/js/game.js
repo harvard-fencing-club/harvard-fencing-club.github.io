@@ -1,22 +1,37 @@
 /*
  * Strip Duel — a tiny side-view fencing game. You (red, left) vs. the computer (green, right).
  * Advance/retreat to manage distance, lunge to score, parry to stop an attack and riposte.
+ * Pick sabre, foil or épée; each has its own rules (WEAPONS below).
  *
- * Scoring follows sabre-style right of way:
- *  - Only touches landing within LOCKOUT ms of each other count as a double; otherwise
- *    the first touch scores alone.
+ * In every weapon, only touches landing within the weapon's lockout of each other count as a
+ * double; otherwise the first touch scores alone. Lockouts are the real ones (sabre 170 ms,
+ * foil 300 ms, épée 45 ms) scaled to the game's pace (x0.7).
+ *
+ * Sabre right of way:
  *  - On a double, a fencer who just parried has priority (the riposte wins).
  *  - Otherwise the attack that started first wins. Advancing straight into a lunge counts
  *    as one continuous attack, starting when the forward movement began; stopping or
  *    stepping back for more than BREAK ms breaks it. Retreating or standing still and
  *    then lunging into an attack already under way is a counter-attack, and loses.
- *  - If both attacks started within SIMUL ms of each other: on the first action in the box
+ *  - If both attacks started within 120 ms of each other: on the first action in the box
  *    after "Allez" only, the one who launched the final action (the lunge) clearly first
  *    wins (attack in preparation). The first action ends once either fencer retreats,
  *    pauses after advancing, parries, or a lunge finishes without a touch.
- *    Referees are strict here: only if both lunges start within BOX_SIMUL ms is it
+ *    Referees are strict here: only if both lunges start within 40 ms (boxSimul) is it
  *    simultaneous (no point). Outside the first action, it's simply simultaneous.
  *  - A parried or missed attack loses its priority.
+ *
+ * Foil right of way: as sabre, but on the first action in the box the lunges can start up to
+ * 90 ms apart and still be simultaneous (sabre: 40), while outside the box attacks must start
+ * within 50 ms of each other (sabre: 120), so simultaneous calls there are rare.
+ * Valid target is the torso only (the grey lamé): a touch that only reaches the white arm
+ * in front of it is off target (white light), which stops the action with no point, and play
+ * restarts from that part of the strip. If the fencer with right of way lands off target,
+ * nothing scores, even if the other's counter-attack lands.
+ *
+ * Épée: no right of way. The whole body is target, including the hand and arm held out in
+ * front. The first touch scores; touches within the lockout are a double and both score,
+ * except a double at the last touch (both on 4) is annulled.
  */
 (() => {
   "use strict";
@@ -42,15 +57,69 @@
     PARRY = 420,
     PARRY_ACTIVE = 280,
     STUN = 600,
-    LOCKOUT = 120, // sabre lockout: later touches don't register
-    SIMUL = 120, // attacks starting this close together are simultaneous
-    BOX_SIMUL = 40, // out of the box, lunges must start within this to be simultaneous (strict)
     BREAK = 120, // pausing or retreating this long ends an attack in progress
     PRIORITY = 900, // how long a successful parry keeps the right of way
-    BLADE_UP = 72, // en garde: blade held fairly upright
-    BLADE_MOVING = 45, // advancing or retreating
-    BLADE_DEFLECT = 62, // a parried blade is knocked up and out of line, not thrown back
     BLADE_LENGTH = 108;
+  // Rules and look of each weapon. target/offTarget: how far in front of the body a touch
+  // counts / is off target. Blade angles are degrees above horizontal: en garde, on the move,
+  // at full lunge, and when knocked aside by a parry. parryHand/parryTip: the parry position.
+  const WEAPONS = {
+    sabre: {
+      name: "Sabre",
+      lockout: 120,
+      rightOfWay: true,
+      simul: 120, // attacks starting this close together are simultaneous
+      advanceAttack: true, // an unbroken advance into the lunge is all one attack
+      box: true, // attack in preparation on the first action in the box
+      boxStart: 120, // first action: attacks starting this close together count as "together"...
+      boxSimul: 40, // ...and then lunges must start within this to be simultaneous (strict)
+      target: 25,
+      offTarget: 0,
+      guard: 72, // blade held fairly upright
+      moving: 45,
+      lunge: 0,
+      deflect: 62, // knocked up and out of line, not thrown back
+      parryHand: [58, -150],
+      parryTip: [95, -254], // blade raised to block the cut
+    },
+    foil: {
+      name: "Foil",
+      lockout: 210,
+      rightOfWay: true,
+      simul: 50, // outside the box, simultaneous is rare
+      advanceAttack: true,
+      box: true,
+      boxStart: 120,
+      boxSimul: 90, // in the box, a longer simultaneous window than sabre
+      boxPatience: 40, // computer: extra wind-up on the first action in the box
+      target: 25, // torso only
+      offTarget: 55, // the arm and hand held out in front
+      guard: 22, // point at the opponent's chest
+      moving: 22,
+      lunge: -2,
+      deflect: 42,
+      parryHand: [62, -150],
+      parryTip: [120, -244], // quarte: point up, blade across the chest
+    },
+    epee: {
+      name: "Épée",
+      lockout: 32,
+      rightOfWay: false,
+      target: 55, // whole body, including the hand and arm held out in front
+      offTarget: 0,
+      guard: 10, // point in line with the opponent's wrist
+      moving: 10,
+      lunge: -4,
+      deflect: -16, // pushed down and out of line
+      parryHand: [70, -150],
+      parryTip: [172, -196], // sixte: a small opposition, point still forward
+      advanceAttack: false, // no right of way: only the timing of the touches matters
+      strikeInto: [284, 27], // computer: distance to attack into an advance (+ random spread)
+    },
+  };
+  let weapon = WEAPONS.sabre;
+  // Extra reach against a target further forward (épée hand), for the computer's distances.
+  const reach = () => weapon.target - WEAPONS.sabre.target;
   // prepAttack: chance to lunge into your advance (attack on preparation) when in range.
   // Each level: think/react = decision and reaction times (ms); parry/riposte/aggression/prepAttack/
   // rowSense/forward = probabilities; prep = attack wind-up (ms); speed = footwork speed.
@@ -162,7 +231,7 @@
     notForward: 0, // ms spent not advancing (pausing/retreating)
     attackStart: Infinity, // right-of-way time of the current attack (Infinity = none)
     priorityUntil: 0, // after a successful parry, this fencer has the right of way
-    blade: BLADE_UP, // blade angle above horizontal, in degrees (animated)
+    blade: 72, // blade angle above horizontal, in degrees (animated)
   });
   const player = fencer("player"),
     cpu = fencer("cpu");
@@ -174,7 +243,8 @@
     pending = [],
     resolveAt = 0,
     lastCall = "",
-    firstAction = true; // still the first action in the box after "Allez"?
+    firstAction = true, // still the first action in the box after "Allez"?
+    restartAt = null; // after an off-target touch, play restarts here (the fencers' midpoint)
   // AI "brains": the computer always has one. (Tests can also give the player one, to
   // play two levels against each other.)
   const newBrain = (lvl) => ({ level: lvl, think: 0, reactAt: 0, moveUntil: 0 });
@@ -192,8 +262,13 @@
   };
 
   function resetPositions() {
+    // Back to the en garde lines, or (after an off-target touch) en garde distance where the
+    // action stopped, keeping both fencers clear of the red end zones.
+    const room = 220 + FRONT_FOOT + 40;
+    const mid = restartAt === null ? W / 2 : Math.min(Math.max(restartAt, RED_L + room), RED_R - room);
+    restartAt = null;
     Object.assign(player, {
-      x: 420,
+      x: mid - 220,
       state: "idle",
       t: 0,
       e: 0,
@@ -202,15 +277,16 @@
       hitDone: false,
       riposteUntil: 0,
     });
-    Object.assign(cpu, { x: 860, state: "idle", t: 0, e: 0, p: 0, move: 0, hitDone: false, riposteUntil: 0 });
+    Object.assign(cpu, { x: mid + 220, state: "idle", t: 0, e: 0, p: 0, move: 0, hitDone: false, riposteUntil: 0 });
     [player, cpu].forEach((who) =>
       Object.assign(who, {
         forwardSince: null,
         notForward: 0,
         attackStart: Infinity,
         priorityUntil: 0,
-        blade: BLADE_UP,
+        blade: weapon.guard,
         hasAdvanced: false,
+        valid: true, // did the latest touch land on valid target?
       }),
     );
     firstAction = true;
@@ -220,6 +296,7 @@
   }
   function startMatch() {
     player.score = cpu.score = 0;
+    restartAt = null;
     resetPositions();
     overlay.hidden = true;
     stage.focus({ preventScroll: true });
@@ -241,8 +318,9 @@
       prepMs: prep,
       move: 0,
     });
-    // An attack started straight out of an unbroken advance began when the advance did.
-    who.attackStart = who.forwardSince !== null ? who.forwardSince : now;
+    // Sabre: an attack started straight out of an unbroken advance began when the advance did.
+    // Foil and épée: it starts when the arm starts extending (after any wind-up).
+    who.attackStart = weapon.advanceAttack && who.forwardSince !== null ? who.forwardSince : now;
     who.forwardSince = null;
     if (who.state === "lunge") who.lungeStart = now;
     const foe = brainOf(opponent(who));
@@ -290,16 +368,16 @@
 
   function step(who, dt) {
     who.t += dt;
-    // Blade angle: upright en garde, ~45° on the move, fully extended (level) at the end of a lunge.
+    // Blade angle: en garde, on the move, and fully extended (level) at the end of a lunge.
     const moving = who.state === "idle" && who.move !== 0 && phase === "fencing";
     const target =
       who.state === "stunned"
-        ? BLADE_DEFLECT
+        ? weapon.deflect
         : who.state === "lunge"
-          ? BLADE_MOVING * (1 - who.e)
+          ? lerp(weapon.moving, weapon.lunge, who.e)
           : who.state === "prep" || moving
-            ? BLADE_MOVING
-            : BLADE_UP;
+            ? weapon.moving
+            : weapon.guard;
     const rate = who.state === "lunge" ? 35 : who.state === "stunned" ? 60 : 110; // quick extension and deflection
     who.blade += (target - who.blade) * Math.min(1, dt / rate);
     if (who.flash > 0) who.flash -= dt;
@@ -324,6 +402,7 @@
       who.state = "lunge";
       who.t = 0;
       who.lungeStart = now;
+      if (!weapon.advanceAttack) who.attackStart = now;
     }
     if (who.state === "lunge") {
       if (!who.hitDone && who.t > who.extend + HOLD) {
@@ -361,8 +440,11 @@
     if (attacker.state !== "lunge" || attacker.hitDone || attacker.t > attacker.extend + HOLD) return;
     const target = opponent(attacker);
     const tip = attacker.x + attacker.f * tipDx(attacker);
-    const front = bodyX(target) + target.f * 25;
-    if ((tip - front) * attacker.f < 0) return;
+    const reaches = (ahead) => (tip - (bodyX(target) + target.f * ahead)) * attacker.f >= 0;
+    if (reaches(weapon.target)) attacker.valid = true;
+    // Foil: fully extended but only reaching the arm in front of the torso is off target.
+    else if (weapon.offTarget && attacker.t >= attacker.extend && reaches(weapon.offTarget)) attacker.valid = false;
+    else return;
     attacker.hitDone = true;
     if (target.state === "parry" && target.t < PARRY_ACTIVE) {
       attacker.state = "stunned";
@@ -378,7 +460,7 @@
       if (brain && Math.random() < brain.level.riposte) lunge(target, 0);
       return;
     }
-    if (!pending.length) resolveAt = now + LOCKOUT;
+    if (!pending.length) resolveAt = now + weapon.lockout;
     pending.push(attacker);
   }
 
@@ -389,30 +471,51 @@
     if (aRiposte !== bRiposte) return { winner: aRiposte ? a : b, call: "Riposte!" };
     const diff = a.attackStart - b.attackStart;
     if (!Number.isFinite(diff) && a.attackStart === b.attackStart) return { winner: null, call: "Simultaneous" };
-    if (Math.abs(diff) <= SIMUL) {
+    const inBox = weapon.box && firstAction;
+    if (Math.abs(diff) <= (inBox ? weapon.boxStart : weapon.simul)) {
       // Attack in preparation only exists on the first action in the box: whoever finishes
       // first wins. Any other time, two attacks starting together are simultaneous.
       const lungeDiff = a.lungeStart - b.lungeStart;
-      if (firstAction && Math.abs(lungeDiff) > BOX_SIMUL)
+      if (inBox && Math.abs(lungeDiff) > weapon.boxSimul)
         return { winner: lungeDiff < 0 ? a : b, call: "Attack in prep!" };
       return { winner: null, call: "Simultaneous" };
     }
     return { winner: diff < 0 ? a : b, call: "Right of way!" };
   }
+  // Lamps: the fencer's colour for a valid touch, white for off target.
+  const lamp = (who) => (who.valid ? true : "white");
   function resolve() {
     const [a, b] = pending;
     pending = [];
-    if (!b) return award(a, "Touché!");
-    lamps = { player: true, cpu: true };
+    if (!weapon.rightOfWay) return b ? double() : award(a, "Touché!");
+    lamps = { [a.side]: lamp(a), ...(b && { [b.side]: lamp(b) }) };
+    if (!b) return a.valid ? award(a, "Touché!") : offTarget();
     const { winner, call } = rightOfWay(a, b);
-    lastCall = call;
-    if (!winner) {
-      phase = "halt";
-      phaseT = now;
-      say(call, "#fff6f4", 1300, 60);
-      return;
-    }
+    if (!winner) return halt(call);
+    // Right of way, but off target: no point, even if the counter-attack landed.
+    if (!winner.valid) return offTarget();
     award(winner, call);
+  }
+  // Foil off target: the action stops and play restarts from that part of the strip.
+  function offTarget() {
+    restartAt = (player.x + cpu.x) / 2;
+    halt("Off target");
+  }
+  // No point: stop and go again.
+  function halt(call) {
+    lastCall = call;
+    phase = "halt";
+    phaseT = now;
+    say(call, "#fff6f4", 1300, 60);
+  }
+  // Épée double: both score, unless it would decide the bout for both (annulled).
+  function double() {
+    lamps = { player: true, cpu: true };
+    if (player.score === TO - 1 && cpu.score === TO - 1) return halt("Double annulled");
+    player.score += 1;
+    cpu.score += 1;
+    player.flash = cpu.flash = 400;
+    halt("Double!");
   }
 
   function award(scorer, text) {
@@ -437,7 +540,7 @@
     phase = "over";
     document.getElementById("overlay-title").textContent = won ? "Victory!" : "Defeat.";
     document.getElementById("overlay-text").textContent =
-      `${player.score}–${cpu.score} against ${level.opponent}. ${won ? (level.name === "Olympian" ? "You are the GOAT." : "Try a harder opponent?") : "Salute and rematch!"}`;
+      `${player.score}–${cpu.score} against ${level.opponent} in ${weapon.name.toLowerCase()}. ${won ? (level.name === "Olympian" ? "You are the GOAT." : "Try a harder opponent?") : "Salute and rematch!"}`;
     document.getElementById("start-btn").textContent = "Rematch";
     overlay.hidden = false;
     document.getElementById("start-btn").focus({ preventScroll: true });
@@ -448,8 +551,11 @@
   const gapOf = (me) => (opponent(me).x - me.x) * me.f;
   const roomBehind = (me) => (me.f === 1 ? me.x + FRONT_FOOT - RED_L : RED_R - (me.x - FRONT_FOOT));
 
+  // Wind-up before the final action. Foilists build the first action in the box more patiently.
+  const windUp = (lvl) => lvl.prep + (weapon.box && firstAction ? weapon.boxPatience || 0 : 0);
   function runAi(me, brain) {
-    const foe = opponent(me), lvl = brain.level, gap = gapOf(me);
+    // gap: distance measured against a sabre-length reach, so the same distances work in épée.
+    const foe = opponent(me), lvl = brain.level, gap = gapOf(me) - reach();
     // Never back off the end of the strip.
     if (me.move === -1 && roomBehind(me) < 30) me.move = 0;
     // React to an incoming attack: parry, or step back.
@@ -471,10 +577,19 @@
     brain.think = now + lvl.think * (0.7 + Math.random() * 0.6);
     if (lvl.smart) return runSmartAi(me, gap);
     // Stronger levels mostly avoid counter-attacking into an advance (it loses on right of way).
+    // In foil and épée an advance is only preparation: they hit it as it comes into reach.
     if (foe.state === "idle" && foe.forwardSince !== null && Math.random() < lvl.rowSense) {
+      if (!weapon.advanceAttack) {
+        // Their step brings them onto the blade, so watch closely once they're near.
+        const [near, spread] = weapon.strikeInto;
+        if (gap <= near + spread * Math.random()) return lunge(me, lvl.prep);
+        if (gap < 360) brain.think = now + lvl.react * 0.5;
+        me.move = gap > 360 ? 1 : 0;
+        return;
+      }
       // Meet them going forward (the box) and finish first, rather than countering into
       // their advance. Only give a step if caught standing still up close.
-      if (me.forwardSince !== null && gap <= 320) return lunge(me, lvl.prep);
+      if (me.forwardSince !== null && gap <= 320) return lunge(me, windUp(lvl));
       if (gap > 300 || me.forwardSince !== null) me.move = 1;
       else me.move = roomBehind(me) > 70 ? -1 : 0;
       return;
@@ -486,7 +601,7 @@
       (intoAdvance && Math.random() < lvl.prepAttack) ||
       (gap <= 305 && Math.random() < lvl.aggression)
     )
-      return lunge(me, lvl.prep);
+      return lunge(me, windUp(lvl));
     const nearEnd = roomBehind(me) < 70;
     if (gap > 330 + Math.random() * 40) me.move = 1;
     else if (gap < 265 && !nearEnd && Math.random() > lvl.forward) me.move = -1;
@@ -496,7 +611,7 @@
     }
   }
 
-  // Olympian: plays the right-of-way rules.
+  // Olympian: plays each weapon's rules.
   function runSmartAi(me, gap) {
     const foe = opponent(me);
     const nearEnd = roomBehind(me) < 70;
@@ -506,6 +621,13 @@
       // Their attack fell short: step in and hit during the recovery.
       if (gap <= 300) return lunge(me, 0);
       me.move = 1;
+      return;
+    }
+    if (!weapon.advanceAttack) {
+      // Foil and épée: whoever extends first has it. Hit their advance (preparation) the
+      // moment it comes into reach; otherwise close in and strike from close range.
+      if (gap <= (foeAdvancing ? 305 : 255)) return lunge(me, 0);
+      me.move = foeAdvancing && gap < 345 ? 0 : 1;
       return;
     }
     if (foeAdvancing) {
@@ -588,9 +710,10 @@
     const angle = (who.blade * Math.PI) / 180;
     let tip = [j.sh2[0] + BLADE_LENGTH * Math.cos(angle), j.sh2[1] - BLADE_LENGTH * Math.sin(angle)];
     if (who.p > 0) {
+      const [hand, point] = [weapon.parryHand, weapon.parryTip];
       j.se = [lerp(j.se[0], 35, who.p), lerp(j.se[1], -132, who.p)];
-      j.sh2 = [lerp(j.sh2[0], 58, who.p), lerp(j.sh2[1], -150, who.p)];
-      tip = [lerp(tip[0], 95, who.p), lerp(tip[1], -254, who.p)];
+      j.sh2 = [lerp(j.sh2[0], hand[0], who.p), lerp(j.sh2[1], hand[1], who.p)];
+      tip = [lerp(tip[0], point[0], who.p), lerp(tip[1], point[1], who.p)];
     }
     if (who.state === "stunned") {
       // Parried: the hand lifts a little as the blade is pushed out of line.
@@ -612,8 +735,11 @@
       ctx.stroke();
     };
     const hit = who.flash > 0;
-    const suit = hit ? "#ffffff" : "#f3ece9"; // white breeches and legs
-    const lame = hit ? "#f2f4f7" : "#cdd2d8"; // silver sabre lamé: torso and arms (the target area)
+    const suit = hit ? "#ffffff" : "#f3ece9"; // white jacket, breeches and legs
+    // Lamé covers the target: silver on the sabre torso and arms, grey on the foil torso,
+    // none in épée (all white).
+    const lame = weapon === WEAPONS.sabre ? (hit ? "#f2f4f7" : "#cdd2d8") : weapon === WEAPONS.foil ? (hit ? "#c4c8cd" : "#8f959c") : suit;
+    const sleeve = weapon === WEAPONS.sabre ? lame : suit;
     ctx.lineCap = "round";
     ctx.lineJoin = "round";
     // Shadow
@@ -627,7 +753,7 @@
     line([j.bf, j.bk, j.hip], 17, suit);
     line([j.ff, j.fk, j.hip], 17, suit);
     line([j.hip, j.sh], 30, lame);
-    line([j.sh, j.ae, j.ah], 12, lame);
+    line([j.sh, j.ae, j.ah], 12, sleeve);
     ctx.restore();
     // Coloured belt for each side.
     line(
@@ -639,8 +765,7 @@
       COLORS[who.side],
     );
 
-    // Sabre: a flat blade that tapers to a narrow tip, and a knuckle-bow guard
-    // that curves from the bell around the hand to the pommel.
+    // Blade from the hand to the tip.
     const [hx0, hy0] = P(j.sh2);
     const [tx, ty] = P(j.tip);
     const len = Math.hypot(tx - hx0, ty - hy0) || 1;
@@ -648,49 +773,79 @@
       dy = (ty - hy0) / len;
     const nx = -dy,
       ny = dx; // perpendicular to the blade
-    const bow = ny > 0 ? 1 : -1; // the guard always curves toward the floor side
+    const bow = ny > 0 ? 1 : -1; // toward the floor side
+    const sabre = weapon === WEAPONS.sabre;
+    // Sabre: flat blade tapering to a narrow tip. Foil: thin and flexible. Épée: stiffer, thicker.
+    const [baseW, tipW] = sabre ? [2.4, 0.9] : weapon === WEAPONS.foil ? [1.7, 0.8] : [2.6, 1.1];
     const bladeBase = [hx0 + dx * 10, hy0 + dy * 10];
     ctx.fillStyle = "#d7dde3";
     ctx.beginPath();
-    ctx.moveTo(bladeBase[0] + nx * 2.4, bladeBase[1] + ny * 2.4);
-    ctx.lineTo(tx + nx * 0.9, ty + ny * 0.9);
-    ctx.lineTo(tx - nx * 0.9, ty - ny * 0.9);
-    ctx.lineTo(bladeBase[0] - nx * 2.4, bladeBase[1] - ny * 2.4);
+    ctx.moveTo(bladeBase[0] + nx * baseW, bladeBase[1] + ny * baseW);
+    ctx.lineTo(tx + nx * tipW, ty + ny * tipW);
+    ctx.lineTo(tx - nx * tipW, ty - ny * tipW);
+    ctx.lineTo(bladeBase[0] - nx * baseW, bladeBase[1] - ny * baseW);
     ctx.closePath();
     ctx.fill();
-    // Sword arm (lamé) over the grip.
-    line([j.sh, j.se, j.sh2], 12, lame);
-    // Hilt: bell guard, grip, and a knuckle bow joining the bell to the pommel (a closed D shape).
+    if (weapon === WEAPONS.foil) {
+      // Insulating tape on the top sixth of a foil blade, in the fencer's colour.
+      const bladeLen = Math.hypot(tx - bladeBase[0], ty - bladeBase[1]);
+      const tapeStart = [tx - dx * (bladeLen / 6), ty - dy * (bladeLen / 6)];
+      ctx.strokeStyle = COLORS[who.side];
+      ctx.lineWidth = 2.6;
+      ctx.lineCap = "butt";
+      ctx.beginPath();
+      ctx.moveTo(tapeStart[0], tapeStart[1]);
+      ctx.lineTo(tx - dx * 2, ty - dy * 2);
+      ctx.stroke();
+      ctx.lineCap = "round";
+    }
+    if (!sabre) {
+      // Point d'arrêt: the button on the tip of a thrusting weapon.
+      ctx.fillStyle = "#6b7178";
+      ctx.beginPath();
+      ctx.arc(tx, ty, 2.6, 0, Math.PI * 2);
+      ctx.fill();
+    }
+    // Sword arm over the grip.
+    line([j.sh, j.se, j.sh2], 12, sleeve);
     const bell = [hx0 + dx * 8, hy0 + dy * 8];
     const pommel = [hx0 - dx * 14, hy0 - dy * 14];
-    const bellEdge = [bell[0] + nx * 10 * bow, bell[1] + ny * 10 * bow];
-    ctx.strokeStyle = "#b9c0c7";
+    ctx.strokeStyle = ctx.fillStyle = "#b9c0c7";
     ctx.lineWidth = 3.5;
     ctx.beginPath();
     ctx.moveTo(bell[0], bell[1]);
-    ctx.lineTo(pommel[0], pommel[1]); // grip
-    ctx.quadraticCurveTo(hx0 + nx * 19 * bow, hy0 + ny * 19 * bow, bellEdge[0], bellEdge[1]); // knuckle bow
+    if (sabre) {
+      // Bell guard, grip, and a knuckle bow joining the bell to the pommel (a closed D shape).
+      const bellEdge = [bell[0] + nx * 10 * bow, bell[1] + ny * 10 * bow];
+      ctx.lineTo(pommel[0], pommel[1]);
+      ctx.quadraticCurveTo(hx0 + nx * 19 * bow, hy0 + ny * 19 * bow, bellEdge[0], bellEdge[1]);
+    } else {
+      // Pistol grip: a short handle angled down from the bell.
+      ctx.lineTo(hx0 - dx * 10 + nx * 6 * bow, hy0 - dy * 10 + ny * 6 * bow);
+    }
     ctx.stroke();
-    ctx.fillStyle = "#b9c0c7";
+    // Bell guard: small and round for foil, large for épée.
+    const bellR = sabre ? 10 : weapon === WEAPONS.foil ? 9 : 14;
     ctx.beginPath();
-    ctx.ellipse(bell[0], bell[1], 4, 10, Math.atan2(dy, dx), 0, Math.PI * 2);
+    ctx.ellipse(bell[0], bell[1], 4, bellR, Math.atan2(dy, dx), 0, Math.PI * 2);
     ctx.fill();
-    ctx.beginPath();
-    ctx.arc(pommel[0], pommel[1], 3, 0, Math.PI * 2);
-    ctx.fill();
+    if (sabre) {
+      ctx.beginPath();
+      ctx.arc(pommel[0], pommel[1], 3, 0, Math.PI * 2);
+      ctx.fill();
+    }
     // Mask
     const [hx, hy] = P(j.head);
-    // Silver mask: metallic mesh with a soft highlight.
+    // Mask: silver lamé mesh for sabre, black mesh for foil and épée, with a soft highlight.
     const maskX = hx + who.f * 4;
     const sheen = ctx.createLinearGradient(maskX - 19, hy - 24, maskX + 19, hy + 24);
-    sheen.addColorStop(0, "#eef1f4");
-    sheen.addColorStop(0.55, "#bfc5cc");
-    sheen.addColorStop(1, "#8f969f");
+    const shades = sabre ? ["#eef1f4", "#bfc5cc", "#8f969f"] : ["#5a5f66", "#2a2d32", "#141518"];
+    shades.forEach((color, i) => sheen.addColorStop([0, 0.55, 1][i], color));
     ctx.fillStyle = sheen;
     ctx.beginPath();
     ctx.ellipse(maskX, hy, 19, 24, who.f * 0.15, 0, Math.PI * 2);
     ctx.fill();
-    ctx.strokeStyle = "rgba(60,64,72,.35)";
+    ctx.strokeStyle = sabre ? "rgba(60,64,72,.35)" : "rgba(255,255,255,.12)";
     ctx.lineWidth = 1;
     for (let i = -16; i <= 16; i += 6) {
       ctx.beginPath();
@@ -698,7 +853,7 @@
       ctx.lineTo(hx + who.f * 4 + i * 0.7, hy + 20);
       ctx.stroke();
     }
-    ctx.fillStyle = lame; // sabre masks have a conductive lamé bib
+    ctx.fillStyle = sabre ? lame : suit; // sabre masks have a conductive lamé bib
     ctx.fillRect(hx - 13, hy + 18, 26, 9);
     ctx.fillStyle = COLORS[who.side];
     ctx.fillRect(hx - 13, hy + 18, 26, 3);
@@ -734,7 +889,7 @@
     ctx.fillText(`${player.score}   ${cpu.score}`, W / 2, 70);
     ctx.font = `700 14px ${FONT()}`;
     ctx.fillStyle = "rgba(255,240,238,.6)";
-    ctx.fillText(`FIRST TO ${TO}`, W / 2, 122);
+    ctx.fillText(`${weapon.name.toUpperCase()} · FIRST TO ${TO}`, W / 2, 122);
     ctx.fillText("YOU", W / 2 - 200, 112);
     ctx.fillText(level.name.toUpperCase(), W / 2 + 200, 112);
     [
@@ -742,9 +897,10 @@
       ["cpu", W / 2 + 200],
     ].forEach(([side, x]) => {
       ctx.save();
-      ctx.fillStyle = lamps[side] ? COLORS[side] : "rgba(255,255,255,.1)";
+      const color = lamps[side] === "white" ? "#f4f4f4" : COLORS[side];
+      ctx.fillStyle = lamps[side] ? color : "rgba(255,255,255,.1)";
       if (lamps[side]) {
-        ctx.shadowColor = COLORS[side];
+        ctx.shadowColor = color;
         ctx.shadowBlur = 40;
       }
       ctx.fillRect(x - 60, 52, 120, 24);
@@ -849,6 +1005,16 @@
       document
         .querySelectorAll("#difficulty button")
         .forEach((b) => b.setAttribute("aria-pressed", String(b === button)));
+      render();
+    }),
+  );
+  document.querySelectorAll("#weapon button").forEach((button) =>
+    button.addEventListener("click", () => {
+      weapon = WEAPONS[button.dataset.weapon];
+      document
+        .querySelectorAll("#weapon button")
+        .forEach((b) => b.setAttribute("aria-pressed", String(b === button)));
+      resetPositions();
       render();
     }),
   );

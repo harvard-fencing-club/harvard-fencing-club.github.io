@@ -33,7 +33,7 @@ Students from every Harvard school, MIT, and other colleges in the area are welc
 - **Events:** competitions like the NEIFC Big One, plus weekly open bouting with the Crimson Club.
 - **People:** meet our club leaders and find out how to reach us.
 - **Gallery:** browse club photos grouped into collections (bursts of similar shots), and open any one full screen to flip through the similar shots.
-- **Play:** a sabre bout you can play in your browser, scored with real right-of-way rules. Advance, retreat, lunge, and parry your way to five touches against the computer, from Novice up to Olympian.
+- **Play:** a sabre, foil, or épée bout you can play in your browser, scored with each weapon's real rules (right of way, off-target touches, doubles). Advance, retreat, lunge, and parry your way to five touches against the computer, from Novice up to Olympian.
 - **Donate:** how alumni and friends can support the club through Harvard's giving portal or by check.
 - **Resources:** our favorite fencing videos, competition sites, and answers to common questions.
 

@@ -14,6 +14,11 @@ scripts: [game]
           <div class="game-overlay" id="game-overlay">
             <h2 id="overlay-title">En garde</h2>
             <p id="overlay-text">Fence the computer — first to five touches wins!</p>
+            <div class="difficulty" role="group" aria-label="Weapon" id="weapon">
+              <button type="button" data-weapon="sabre" aria-pressed="true">Sabre</button>
+              <button type="button" data-weapon="foil" aria-pressed="false">Foil</button>
+              <button type="button" data-weapon="epee" aria-pressed="false">Épée</button>
+            </div>
             <div class="difficulty" role="group" aria-label="Difficulty" id="difficulty">
               <button type="button" data-level="0" aria-pressed="false">Novice</button>
               <button type="button" data-level="1" aria-pressed="true">Learner</button>
