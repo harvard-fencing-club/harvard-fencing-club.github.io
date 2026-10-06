@@ -1533,6 +1533,18 @@ kbd {
   color: var(--accent);
   line-height: 1.1;
 }
+.game-rules {
+  margin-block: 12px 16px;
+  font-size: 14px;
+}
+.game-rules a {
+  color: var(--accent);
+  font-weight: 600;
+}
+.game-rules a:hover {
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
 .touch-pad {
   display: none;
   grid-template-columns: repeat(4, 1fr);
