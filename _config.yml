@@ -18,3 +18,12 @@ exclude:
   - README.md
   - CLAUDE.md
   - tools/
+
+# Builds /sitemap.xml from the site's pages (a plugin GitHub Pages supports out of the box).
+plugins:
+  - jekyll-sitemap
+
+defaults:
+  # The Google Search Console verification file isn't a page: keep it out of the sitemap.
+  - scope: { path: "google95cd856d676b695c.html" }
+    values: { sitemap: false }
