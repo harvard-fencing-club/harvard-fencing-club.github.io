@@ -27,6 +27,12 @@
   <meta property="og:image:height" content="1200">
   <meta property="og:image:alt" content="Harvard Fencing Club">
   <meta name="twitter:card" content="summary">
+  {%- if page.url == "/" or page.url == "/index.html" %}
+  {%- comment %} Tells Google the site name to show in search results instead of "GitHub". {% endcomment %}
+  <script type="application/ld+json">
+    {"@context":"https://schema.org","@type":"WebSite","name":"{{ site.title }}","alternateName":["HFC","Harvard Fencing"],"url":"{{ '/' | absolute_url }}"}
+  </script>
+  {%- endif %}
 
   <link rel="icon" href="assets/images/favicon.svg" type="image/svg+xml">
   <link rel="apple-touch-icon" href="assets/images/apple-touch-icon.png">
