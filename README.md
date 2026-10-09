@@ -9,7 +9,7 @@
 | When | Time |
 |---|---|
 | Tuesday | 7:30–9:30 PM |
-| Thursday | 7–10 PM (Crimson Club Open Bouting) |
+| Thursday | 7–10 PM (Intercollegiate Open Bouting, for experienced fencers) |
 | Sunday | 10:30 AM–12:30 PM |
 
 **Malkin Athletic Center (MAC), Fencing Room 1, 3rd floor**, Cambridge, MA ([map](https://www.google.com/maps/search/?api=1&query=Malkin+Athletic+Center%2C+39+Holyoke+St%2C+Cambridge%2C+MA))
@@ -30,7 +30,7 @@ Students from every Harvard school, MIT, and other colleges in the area are welc
 ## What's on the website
 
 - **Home:** the weekly practice schedule, a live "next practice" reminder, and a slideshow of photos from the club.
-- **Events:** competitions like the NEIFC Big One, plus weekly open bouting with the Crimson Club.
+- **Events:** competitions like the NEIFC Big One, plus weekly intercollegiate open bouting for experienced fencers.
 - **People:** meet our club leaders and find out how to reach us.
 - **Gallery:** browse club photos grouped into collections (bursts of similar shots), and open any one full screen to flip through the similar shots.
 - **Play:** a sabre, foil, or épée bout you can play in your browser, scored with each weapon's real rules (right of way, off-target touches, doubles). Advance, retreat, lunge, and parry your way to five touches against the computer, from Novice up to Olympian.

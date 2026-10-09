@@ -29,7 +29,7 @@ window.CLUB_CONTENT = {
         weekday: 4,
         start: "19:00",
         end: "22:00",
-        tag: "Crimson Club Open Bouting",
+        tag: "Intercollegiate Open Bouting (experienced fencers)",
         label: "Open bouting",
       },
       { day: "Sunday", time: "10:30 AM–12:30 PM", weekday: 0, start: "10:30", end: "12:30" },
@@ -67,13 +67,13 @@ window.CLUB_CONTENT = {
     },
     {
       tag: "Open bouting",
-      title: "Crimson Club Open Bouting",
+      title: "Intercollegiate Open Bouting",
       subtitle: "",
       date: "",
       repeats: "Thu",
       place: "Thursdays · 7–10 PM",
       description:
-        "Get to fence against collegiate clubs from across Massachusetts. Please message to inform us before coming!",
+        "For experienced fencers: fence against collegiate clubs from across Massachusetts. Please message to inform us before coming!",
     },
   ],
 
