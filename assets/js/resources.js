@@ -4,7 +4,7 @@
 (() => {
   "use strict";
   if (!window.HFC) return;
-  const { content, $, make, safeUrl, external } = window.HFC;
+  const { content, $, make, safeUrl, external, onMediaChange } = window.HFC;
 
   const arrowIcon = () => {
     const span = make("span", { className: "arrow" });
@@ -27,16 +27,31 @@
     );
   }
 
-  $("#resource-groups").replaceChildren(
-    ...content.resources.map((group) =>
-      make(
-        "section",
-        {},
-        make("h2", { className: "label section-title" }, group.group),
-        make("div", { className: "grid resource-grid" }, ...group.items.map(resourceLink)),
-      ),
-    ),
-  );
+  // Link groups fold up on phones (tap a heading to open it) and are always open on wider screens.
+  const phone = window.matchMedia("(max-width: 640px)");
+  const groups = content.resources.map((group) => {
+    const icon = make("i", {}, "+");
+    icon.setAttribute("aria-hidden", "true");
+    const summary = make(
+      "summary",
+      { className: "label section-title" },
+      make("span", {}, group.group),
+      icon,
+    );
+    summary.addEventListener("click", (event) => {
+      if (!phone.matches) event.preventDefault();
+    });
+    return make(
+      "details",
+      { className: "resource-group" },
+      summary,
+      make("div", { className: "grid resource-grid" }, ...group.items.map(resourceLink)),
+    );
+  });
+  const syncGroups = () => groups.forEach((group) => (group.open = !phone.matches));
+  syncGroups();
+  onMediaChange(phone, syncGroups);
+  $("#resource-groups").replaceChildren(...groups);
 
   // FAQ: each question opens/closes; an answer can end with an optional link.
   $("#faq-list").replaceChildren(

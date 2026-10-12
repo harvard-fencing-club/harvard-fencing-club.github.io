@@ -78,7 +78,8 @@
     image.addEventListener("load", () => tile.classList.add("is-loaded"), { once: true });
     image.addEventListener("error", () => tile.classList.add("is-error"), { once: true });
     tile.append(image);
-    if (group.length > 1) {
+    // Count badge only on bigger collections, so the grid stays calm.
+    if (group.length >= 5) {
       const badge = make("span", { className: "tile-count" }, String(group.length));
       badge.insertAdjacentHTML("afterbegin", stackIcon);
       tile.append(badge);

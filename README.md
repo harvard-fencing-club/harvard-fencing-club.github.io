@@ -9,7 +9,7 @@
 | When | Time |
 |---|---|
 | Tuesday | 7:30–9:30 PM |
-| Thursday | 7–10 PM (Intercollegiate Open Bouting, for experienced fencers) |
+| Thursday | 7–10 PM (Intercollegiate Bouting, for experienced fencers) |
 | Sunday | 10:30 AM–12:30 PM |
 
 **Malkin Athletic Center (MAC), Fencing Room 1, 3rd floor**, Cambridge, MA ([map](https://www.google.com/maps/search/?api=1&query=Malkin+Athletic+Center%2C+39+Holyoke+St%2C+Cambridge%2C+MA))

@@ -17,7 +17,7 @@ scripts: [photos, home]
         <h2 class="sr-only">Weekly schedule</h2>
         <ul class="practice-list" id="practice-list">
           <li class="practice-item"><span class="practice-day">Tuesday</span><span class="practice-time">7:30–9:30 PM</span></li>
-          <li class="practice-item"><span class="practice-day">Thursday<small>Intercollegiate Open Bouting (experienced fencers)</small></span><span class="practice-time">7–10 PM</span></li>
+          <li class="practice-item"><span class="practice-day">Thursday<small>Intercollegiate Bouting (experienced fencers)</small></span><span class="practice-time">7–10 PM</span></li>
           <li class="practice-item"><span class="practice-day">Sunday</span><span class="practice-time">10:30 AM–12:30 PM</span></li>
         </ul>
       </div>
@@ -31,11 +31,11 @@ scripts: [photos, home]
         </a>
         <a class="btn btn-email" data-email="first-practice" href="mailto:harvardfencingclub@gmail.com?subject=My%20first%20fencing%20practice">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="3"/><path d="m4 7 8 6 8-6"/></svg>
-          Reach out to us!
+          <span class="btn-long">Reach out to us!</span><span class="btn-short">Email us</span>
         </a>
         <a class="btn btn-instagram" data-instagram href="https://www.instagram.com/theharvardfencingclub/" target="_blank" rel="noopener noreferrer">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.5" cy="6.5" r=".6" fill="currentColor"/></svg>
-          Catch us on Instagram!
+          <span class="btn-long">Catch us on Instagram!</span><span class="btn-short">Instagram</span>
         </a>
       </div>
     </section>
@@ -58,6 +58,7 @@ scripts: [photos, home]
         <input class="gallery-scrub" id="gallery-scrub" type="range" min="1" max="1" value="1" step="1" aria-label="Scrub through photos" hidden>
         <p class="sr-only" id="slide-announcement" role="status" aria-live="polite" aria-atomic="true"></p>
       </div>
-      <p class="home-photo-meta"><a href="gallery.html">See all club photos in the Gallery →</a><span>Photos © Kevin Cho/Michel Tao/Tatum Mueller 2026</span></p>
+      <div class="slide-dots" id="slide-dots" aria-hidden="true"></div>
+      <p class="home-photo-meta"><a href="gallery.html">See all club photos in the Gallery →</a></p>
     </div>
   </main>

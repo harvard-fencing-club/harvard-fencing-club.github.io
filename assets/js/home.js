@@ -139,6 +139,9 @@
   const pauseIcon = pauseButton.innerHTML;
   const playIcon =
     '<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M8 5.5v13a1 1 0 0 0 1.5.86l10.5-6.5a1 1 0 0 0 0-1.72L9.5 4.64A1 1 0 0 0 8 5.5Z"/></svg>';
+  // Phones show small dots under the photo instead of the counter, arrows and scrubber.
+  const dots = photos.map(() => make("span", { className: "slide-dot" }));
+  if (photos.length > 1) $("#slide-dots").replaceChildren(...dots);
   $("#gallery-controls").hidden = photos.length < 2;
   scrub.max = photos.length;
   scrub.hidden = photos.length < 2;
@@ -179,6 +182,7 @@
       frame.setAttribute("aria-hidden", String(i !== index));
     });
     $("#gallery-count").textContent = counterText(index);
+    dots.forEach((dot, i) => dot.classList.toggle("is-active", i === index));
     syncScrub(index);
     if (announce) {
       $("#slide-announcement").textContent = `Photo ${index + 1} of ${photos.length}`;

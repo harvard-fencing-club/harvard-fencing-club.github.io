@@ -52,7 +52,7 @@
       make(
         "div",
         {},
-        make("p", { className: "label event-tag" }, isPast ? `Past · ${event.tag}` : event.tag),
+        make("p", { className: "label event-tag" }, event.tag),
         make("h2", {}, event.title),
         make("p", { className: "event-sub" }, details),
         make("p", { className: "event-desc" }, event.description),
@@ -61,10 +61,18 @@
     );
   }
 
+  // Upcoming and weekly events first; past ones move to their own section below, latest first.
   const list = $("#events-list");
   const events = content.events || [];
-  list.replaceChildren(...events.map(eventCard));
-  if (!events.length)
+  const isPast = (event) => dateTile(event).isPast;
+  const upcoming = events.filter((event) => !isPast(event));
+  const past = events.filter(isPast).sort((a, b) => b.date.localeCompare(a.date));
+  list.replaceChildren(...upcoming.map(eventCard));
+  if (past.length) {
+    $("#past-list").replaceChildren(...past.map(eventCard));
+    $("#past-list").hidden = $("#past-title").hidden = false;
+  }
+  if (!upcoming.length)
     list.append(make("p", {}, "New events are on the way — check Instagram for the latest."));
   fillPhotos($("#event-photos"), content.eventPhotos, 2);
 })();

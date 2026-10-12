@@ -550,6 +550,9 @@ summary {
 .btn-instagram:hover {
   filter: brightness(1.08);
 }
+.btn-short {
+  display: none;
+}
 
 /* Slideshow */
 .home-media {
@@ -561,6 +564,9 @@ summary {
 }
 .home-media .gallery {
   flex: 1;
+}
+.slide-dots {
+  display: none;
 }
 .home-photo-meta {
   display: flex;
@@ -867,6 +873,12 @@ a.card:hover {
 .event-date.is-past {
   color: #b9aeac;
 }
+.events-past-title {
+  margin-top: clamp(28px, 5vh, 44px);
+}
+.events-past .event-card {
+  opacity: 0.6;
+}
 .event-tag {
   color: var(--accent);
 }
@@ -1017,6 +1029,29 @@ a.card:hover {
 .resource-grid {
   grid-template-columns: repeat(2, 1fr);
   column-gap: 32px;
+}
+.resource-group summary {
+  list-style: none;
+  cursor: default;
+}
+.resource-group summary::-webkit-details-marker {
+  display: none;
+}
+.resource-group summary i {
+  display: none;
+  order: 3;
+  font-family: var(--body);
+  font-style: normal;
+  font-size: 22px;
+  font-weight: 400;
+  line-height: 1;
+  transition: transform 0.25s var(--ease);
+}
+.resource-group summary::after {
+  order: 2;
+}
+.resource-group[open] summary i {
+  transform: rotate(45deg);
 }
 .resource-card {
   display: flex;
@@ -1730,6 +1765,31 @@ kbd {
   .resource-grid {
     grid-template-columns: 1fr;
   }
+  /* Resources: link groups fold up like the FAQ. */
+  .resource-groups {
+    gap: 0;
+    margin-bottom: 28px;
+  }
+  .resource-group summary {
+    cursor: pointer;
+    margin-bottom: 0;
+    padding-block: 14px;
+  }
+  .resource-group[open] summary {
+    margin-bottom: 2px;
+  }
+  .resource-group summary i {
+    display: block;
+  }
+  /* Smallest phones: keep the wordmark on one line. */
+  .header-inner {
+    gap: 12px;
+  }
+  .brand {
+    gap: 10px;
+    font-size: min(17px, 4.4vw);
+    white-space: nowrap;
+  }
   .event-card {
     grid-template-columns: 1fr;
     gap: 10px;
@@ -1746,8 +1806,71 @@ kbd {
   .event-date.is-open .d {
     font-size: 22px;
   }
+  /* One main WhatsApp button, with email and Instagram as two smaller buttons below. */
   .home-actions {
-    grid-template-columns: 1fr;
+    grid-template-columns: 1fr 1fr;
+  }
+  .home-actions .btn-whatsapp {
+    grid-column: 1 / -1;
+  }
+  .home-actions .btn-email,
+  .home-actions .btn-instagram {
+    height: 42px;
+  }
+  .btn-long {
+    display: none;
+  }
+  .btn-short {
+    display: inline;
+  }
+  /* Slideshow: swipe, with dots below and only a small pause button on the photo. */
+  .gallery::after,
+  .gallery-count,
+  .gallery-scrub,
+  #slide-prev,
+  #slide-next {
+    display: none;
+  }
+  .gallery-controls {
+    left: auto;
+    right: 10px;
+    bottom: 10px;
+  }
+  .gallery-controls .icon-btn {
+    width: 32px;
+    height: 32px;
+  }
+  .gallery-controls .icon-btn svg {
+    width: 14px;
+    height: 14px;
+  }
+  .slide-dots {
+    display: flex;
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-top: 12px;
+  }
+  .slide-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 3px;
+    background: var(--on-crimson);
+    opacity: 0.35;
+    transition:
+      width 0.3s var(--ease),
+      opacity 0.3s;
+  }
+  .slide-dot.is-active {
+    width: 16px;
+    opacity: 1;
+  }
+  .home-photo-meta {
+    margin-top: 10px;
+  }
+  .site-footer {
+    font-size: 10.5px;
+    line-height: 1.3;
   }
 }
 @media (max-width: 340px) {
@@ -1768,6 +1891,12 @@ kbd {
 @media (hover: none), (max-width: 960px) {
   .touch-pad {
     display: grid;
+  }
+}
+/* Touchscreens use the on-screen buttons, so the keyboard controls list is hidden. */
+@media (hover: none), (max-width: 640px) {
+  .game-keys {
+    display: none;
   }
 }
 @media (prefers-reduced-motion: reduce) {
