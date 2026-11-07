@@ -42,6 +42,12 @@
 
   const isLocalPreview = /^(localhost|127\.0\.0\.1)$/.test(location.hostname);
   const isDriveId = (id) => /^[A-Za-z0-9_-]{10,200}$/.test(id);
+  // Google-hosted photo at a given width, turned upright if the gallery editor marked it
+  // as stored sideways (rotate: { id: 90 | 180 | 270 } in photos.js).
+  const photoUrl = (id, width) => {
+    const turn = window.CLUB_PHOTOS?.rotate?.[id];
+    return `https://lh3.googleusercontent.com/d/${id}=w${width}${turn ? `-r${turn}` : ""}`;
+  };
 
   // Photo grids from content.js (Events side column, People photo row).
   // Empty frames only appear on the local preview, never on the live site.
@@ -73,7 +79,7 @@
     container.hidden = !items.length;
   }
 
-  window.HFC = { content, $, make, safeUrl, external, onMediaChange, isDriveId, fillPhotos };
+  window.HFC = { content, $, make, safeUrl, external, onMediaChange, isDriveId, photoUrl, fillPhotos };
 
   // ---------- Contact links (filled in from content.js) ----------
   const email = (subject = "", body = "") => {

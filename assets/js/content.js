@@ -29,7 +29,7 @@ window.CLUB_CONTENT = {
         weekday: 4,
         start: "19:00",
         end: "22:00",
-        tag: "Intercollegiate Bouting (experienced fencers)",
+        tag: "Intercollegiate bouting (experienced fencers)",
         label: "Open bouting",
       },
       { day: "Sunday", time: "10:30 AM–12:30 PM", weekday: 0, start: "10:30", end: "12:30" },
@@ -67,7 +67,7 @@ window.CLUB_CONTENT = {
     },
     {
       tag: "Open bouting",
-      title: "Intercollegiate Bouting",
+      title: "Intercollegiate bouting",
       subtitle: "",
       date: "",
       repeats: "Thu",

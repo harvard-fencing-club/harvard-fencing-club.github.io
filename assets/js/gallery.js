@@ -6,7 +6,7 @@
 (() => {
   "use strict";
   if (!window.HFC) return;
-  const { $, make, isDriveId } = window.HFC;
+  const { $, make, isDriveId, photoUrl } = window.HFC;
 
   const grid = $("#photo-grid");
   const source = window.CLUB_PHOTOS?.gallery || {};
@@ -14,7 +14,6 @@
     .map((group) => group.filter(isDriveId))
     .filter((group) => group.length);
   const total = groups.reduce((n, group) => n + group.length, 0);
-  const photoUrl = (id, width) => `https://lh3.googleusercontent.com/d/${id}=w${width}`;
 
   $("#gallery-total").textContent = groups.length ? `· ${groups.length} collections, ${total} photos` : "";
   if (!groups.length) {
@@ -28,7 +27,8 @@
     '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="7" y="7" width="13" height="13" rx="2"/><path d="M4 16V5a1 1 0 0 1 1-1h11"/></svg>';
   let rendered = 0;
 
-  // Tile sizes: every 10th tile is a big 2x2 feature. To make the grid end in a full
+  // Tile sizes: big 2x2 features are the ones chosen in the gallery editor (featured);
+  // without a saved layout (autoBig), every 10th tile is big too. To make the grid end in a full
   // rectangle, a few tiles are widened (2x1) so the cell count divides evenly by the
   // number of columns, which depends on screen width (recalculated on resize).
   let sizes = [];
@@ -38,7 +38,10 @@
     const n = groups.length;
     const featured = new Set(source.featured || []);
     const isFeatured = (group) => group.some((photo) => featured.has(photo));
-    sizes = groups.map((group, i) => (columns >= 3 && (i % 10 === 0 || isFeatured(group)) ? "big" : ""));
+    const autoBig = source.autoBig !== false;
+    sizes = groups.map((group, i) =>
+      columns >= 3 && ((autoBig && i % 10 === 0) || isFeatured(group)) ? "big" : "",
+    );
     const cells = n + 3 * sizes.filter((size) => size === "big").length;
     let missing = (columns - (cells % columns)) % columns;
     // Prefer widening tiles halfway between features, working back from the end.
@@ -78,8 +81,8 @@
     image.addEventListener("load", () => tile.classList.add("is-loaded"), { once: true });
     image.addEventListener("error", () => tile.classList.add("is-error"), { once: true });
     tile.append(image);
-    // Count badge only on bigger collections, so the grid stays calm.
-    if (group.length >= 5) {
+    // Count badge on every collection with more than one photo.
+    if (group.length > 1) {
       const badge = make("span", { className: "tile-count" }, String(group.length));
       badge.insertAdjacentHTML("afterbegin", stackIcon);
       tile.append(badge);

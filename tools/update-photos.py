@@ -5,12 +5,14 @@ Run this after adding or removing photos in either folder:
     python tools/update-photos.py
 
 It reads each folder's public listing and rewrites assets/js/photos.js with every image's
-Drive ID (videos are skipped). Both folders must be shared as
-"Anyone with the link -> Viewer".
+Drive ID (videos are skipped). Photos in subfolders (any depth) are included too: the
+folder's own photos come first, then each subfolder's in Drive's listing order. Both
+folders must be shared as "Anyone with the link -> Viewer" (subfolders inherit that).
 
-For the Gallery page it also groups bursts of similar-looking shots together, so
-visitors browse ~80-110 "collections" and can open the similar shots in each one.
-Grouping needs Pillow (`pip install pillow`); without it every photo stands alone.
+For the Gallery page it also groups similar shots into "collections" (one tile each,
+with the similar shots inside), using the CLIP image-recognition model so a collection
+is one moment or activity. Needs: pip install pillow numpy scipy open_clip_torch
+Per-photo features are cached in tools/.photo-cache.json, so reruns only analyse new photos.
 """
 import concurrent.futures
 import pathlib
@@ -29,29 +31,35 @@ FOLDERS = {
     # Everything, shown on the Gallery page.
     "gallery": "https://drive.google.com/drive/folders/1AsU9HAFkrSXT7cp5UNkjjno0jdINid_B?usp=sharing",
 }
-# Hand-picked front-page photos (Drive file IDs). While this list has IDs, the home
+# Hand-picked front-page photos (Drive file IDs): 12 older picks alternating with 13 from
+# Big One/Hike, in slideshow order. While this list has IDs, the home
 # slideshow uses exactly these; empty it to use the "home" folder instead.
 HOME_PICKS = [
     "1uNAjK2biGJz50iGc55AELZlrCsjtFexu",
-    "1cVPUsx_StoNWi3T8z0M8QdASEkGf3lwq",
-    "1nC7aQkbd44ZkyghNryxsWmEKHiHGgN92",
-    "15THr_xHuBN7XVU_Es8eLow3V_zWNq--l",
+    "1uxJabuVZ9vBs-uJFw8IILBlCbvf2GXyp",
     "1HoD2VlwGCiCyhsARq8HuSVgcBathaWgf",
+    "1HVdd75PpLhpNFCPMUUOAxOXP1eybk7jP",
     "1tNSrNM5hxqAe4O0nPamMf4faY26UBLIl",
+    "1Uw7z828stJPT3UqApA0WdceOAJacYWiA",
     "1vzUr5sxxq9Yd90YowXf1j1hThZ8nOxT5",
-    "1IQo48v8QRMSJLjla_EHsyq5GbKJAYtWA",
+    "1eI0zc3XO12M-_q57IoM2YHV7Eqkm4h3H",
     "1RyErPTvLXRivzPNhK3F0a0mA4i3MjvKm",
+    "1_s5AEF-BkRu7eA2zDAQtriPEZwYFAQbD",
     "1tmNueqYMcCXg71fHvEV8A0UBL5_erh1t",
+    "1eIeVIuuGgTDPIcl57vNaA1DtUFT9qnmi",
     "1NhzNBfotaiFFNy-9uPrNs2pcx7e3255-",
+    "1P30xR1WVLPTKO1zvyX_tDvittnMz7AGS",
     "1L9oJ6nCFRuM8LVLzt4wDrHPgU2BKKX7n",
+    "1323_qwYlO-9YHih8vd_MIExsHnU1UXsd",
     "1WeYvTPg2uPecUpaDwi-xhyXnprJQMDDx",
+    "1wuJwYBZsHRc96vgO6EXju0TWPn2f9d1u",
     "1pbetpKT6Ogdgyvg5fjW-ywDaZ_h8tkyv",
-    "1Pbq_Pj-hQjpnfUZQi2PnLKPoCiXRHutG",
-    "1snwDOIQkOzIOREJA-eQr5CP76sdtSPty",
-    "1_m9IlW0s1TRfaxxq8GDbkT5pH7-u0S4N",
+    "1PfHwUz6d6wONHLqWeMx9SYg1hPOslYkZ",
     "116Jy_ewyK9fMxGP8YJ1adfWezHilNodK",
+    "1TJZaOGO3IO4Tp-KEvXAzktcgfFxfVGc0",
     "1AnyrpwTdvRRIk9M8l3NQP9Y1VcjAW507",
-    "1Y141_aDadYoRcpJCSmA4npSVtLFTbARV",
+    "1gdL-rrA6KhTN74-jUTdjtQ1cWh2sr5QX",
+    "1gKI18c5br4Rw0rZO5H3-Bvz4z9KPRXbD",
 ]
 # Optional framing for the slideshow crop ("x% y%"). Default: centre for wide photos,
 # upper portion (50% 20%) for tall ones.
@@ -98,8 +106,31 @@ MERGES = [
 ]
 IMAGE_EXTENSIONS = {"jpg", "jpeg", "png", "webp", "heic", "gif"}
 NEWEST_FIRST = True        # Gallery shows the most recently added collections first
-TARGET_GROUPS = 95          # aim for roughly this many gallery "collections"
-GROUP_RANGE = (80, 110)     # acceptable range
+# Subfolders oldest first (the newest end up first in the Gallery), matched by a word in
+# the folder name (case doesn't matter). Subfolders that match nothing here count as
+# newer than all of these, in Drive's listing order.
+SUBFOLDER_ORDER = [
+    "TOURNAMENT",
+    "FUN",
+    "HIKE",
+    "BIG ONE",
+]
+# Gallery grouping uses CLIP, an image-recognition model, so collections follow what a
+# photo shows (a bout, a salute, a group pose, a summit view), not just its colours.
+# Distance between two photos = CLIP difference + COLOUR_WEIGHT x colour difference
+# + TIME_WEIGHT x how far apart they are in the folder (full penalty at TIME_SPAN photos).
+GROUP_CUTOFF = 0.27         # lower = more, tighter collections
+COLOUR_WEIGHT = 0.3
+TIME_WEIGHT = 0.15
+TIME_SPAN = 40
+SAME_SHOT = 0.94            # photos at least this alike (CLIP) always share a collection...
+MAX_SPREAD = 0.35           # ...unless that would put photos this different together
+CLIP_MODEL = ("ViT-B-16", "datacomp_xl_s13b_b90k")
+CACHE = pathlib.Path(__file__).resolve().parent / ".photo-cache.json"  # per-photo features (not committed)
+# Saved by the gallery editor (python tools/gallery-editor.py): collection order and
+# contents, "always big" tiles, front-page photos and rotations. Once it exists it replaces the
+# automatic layout, MERGES, SPLITS, FEATURED and HOME_PICKS for the photos it lists.
+LAYOUT = pathlib.Path(__file__).resolve().parent / "gallery-layout.json"
 
 
 def fetch(url, timeout=30):
@@ -107,86 +138,167 @@ def fetch(url, timeout=30):
     return urllib.request.urlopen(request, timeout=timeout).read()
 
 
-def list_photos(folder_url):
-    folder_id = re.search(r"/folders/([A-Za-z0-9_-]+)", folder_url).group(1)
+def list_folder(folder_id, seen, name="main folder"):
+    """Photo IDs in one folder, then in each subfolder (and theirs), as lists per folder."""
+    if folder_id in seen:
+        return []
+    seen.add(folder_id)
     try:
         page = fetch(f"https://drive.google.com/embeddedfolderview?id={folder_id}").decode("utf-8")
     except Exception as error:
-        sys.exit(f"Could not read {folder_url} ({error}). Is it shared as 'Anyone with the link'?")
+        sys.exit(f"Could not read folder {folder_id} ({error}). Is it shared as 'Anyone with the link'?")
     entries = re.findall(
         r'<div class="flip-entry" id="entry-([A-Za-z0-9_-]+)".*?<a href="([^"]+)".*?flip-entry-title">([^<]*)<',
         page, re.S)
     ids = [file_id for file_id, link, name in entries
            if "/file/d/" in link and html.unescape(name).rsplit(".", 1)[-1].lower() in IMAGE_EXTENSIONS]
+    lists = [(name, ids)] if ids else []
+    folders = [(file_id, html.unescape(name)) for file_id, link, name in entries if "/folders/" in link]
+    def rank(folder):
+        hits = [k for k, word in enumerate(SUBFOLDER_ORDER) if word.lower() in folder[1].lower()]
+        return hits[0] if hits else len(SUBFOLDER_ORDER)
+
+    folders.sort(key=rank)
+    for file_id, sub_name in folders:
+        sub = list_folder(file_id, seen, sub_name)
+        if sub:
+            print(f"  subfolder {sub_name!r}: {sum(len(i) for _, i in sub)} photos")
+        lists += sub
+    return lists
+
+
+def list_photos(folder_url):
+    """Every photo in the folder and its subfolders, the index where each folder starts,
+    and [folder name, photo count] per folder."""
+    folder_id = re.search(r"/folders/([A-Za-z0-9_-]+)", folder_url).group(1)
+    ids, starts, folders = [], set(), []
+    for name, folder_ids in list_folder(folder_id, set()):
+        starts.add(len(ids))
+        fresh = [i for i in folder_ids if i not in ids]
+        ids += fresh
+        folders.append([name, len(fresh)])
     if not ids:
         sys.exit(f"No photos found in {folder_url}. Check the link and its sharing settings.")
-    return ids
+    return ids, starts, folders
 
 
-def group_similar(ids):
-    """Group consecutive look-alike shots (photos are listed in the order they were taken)."""
+def photo_features(ids):
+    """CLIP embedding, tiny colour thumbnail and sharpness per photo, cached in CACHE."""
     try:
-        from PIL import Image, ImageFilter, ImageStat
-    except ImportError:
-        print("  (Pillow not installed: skipping similar-photo grouping)")
-        return [[i] for i in ids]
+        import numpy as np
+        import open_clip
+        import torch
+        from PIL import Image, ImageFilter, ImageOps, ImageStat
+    except ImportError as error:
+        sys.exit(f"Missing {error.name}. Grouping needs: pip install pillow numpy scipy open_clip_torch")
 
-    def features(file_id):
-        for _ in range(3):
+    cache = json.loads(CACHE.read_text()) if CACHE.exists() else {}
+    cache = cache if cache.get("model") == list(CLIP_MODEL) else {"model": list(CLIP_MODEL)}
+    todo = [i for i in ids if i not in cache]
+
+    def load(file_id):
+        for _ in range(4):
             try:
-                image = Image.open(io.BytesIO(fetch(f"https://lh3.googleusercontent.com/d/{file_id}=w160"))).convert("RGB")
-                small = image.resize((24, 18))
-                sharp = ImageStat.Stat(image.convert("L").filter(ImageFilter.FIND_EDGES)).var[0]
-                return small.tobytes(), sharp
+                image = Image.open(io.BytesIO(fetch(f"https://lh3.googleusercontent.com/d/{file_id}=w400")))
+                return ImageOps.exif_transpose(image).convert("RGB")
             except Exception:
                 continue
-        return None, 0.0
+        return None
 
-    print(f"  analysing {len(ids)} photos for similar shots...")
-    with concurrent.futures.ThreadPoolExecutor(max_workers=8) as pool:
-        feats = list(pool.map(features, ids))
+    if todo:
+        print(f"  analysing {len(todo)} new photos (first run downloads the CLIP model)...")
+        with concurrent.futures.ThreadPoolExecutor(max_workers=8) as pool:
+            images = list(pool.map(load, todo))
+        model, _, preprocess = open_clip.create_model_and_transforms(CLIP_MODEL[0], pretrained=CLIP_MODEL[1])
+        model.eval()
+        for k in range(0, len(todo), 32):
+            batch = [(i, im) for i, im in zip(todo[k:k + 32], images[k:k + 32]) if im is not None]
+            if not batch:
+                continue
+            with torch.no_grad():
+                emb = model.encode_image(torch.stack([preprocess(im) for _, im in batch]))
+            emb = (emb / emb.norm(dim=-1, keepdim=True)).tolist()
+            for (file_id, image), e in zip(batch, emb):
+                cache[file_id] = {
+                    "clip": [round(x, 5) for x in e],
+                    "colour": list(image.resize((24, 18)).tobytes()),
+                    "sharp": ImageStat.Stat(image.convert("L").filter(ImageFilter.FIND_EDGES)).var[0],
+                }
+        CACHE.write_text(json.dumps(cache))
+    missing = [i for i in ids if i not in cache]
+    if missing:
+        print(f"  note: couldn't load {len(missing)} photos; each gets its own collection")
+    return cache, np
 
-    def distance(a, b):
-        if a is None or b is None:
-            return 999.0
-        return sum(abs(p - q) for p, q in zip(a, b)) / len(a)
 
-    steps = [distance(feats[i - 1][0], feats[i][0]) for i in range(1, len(ids))]
+def group_folder(ids, cache, np):
+    """Cluster one folder's photos by content (average linkage), keeping folder order."""
+    from scipy.cluster.hierarchy import fcluster, linkage
+    from scipy.spatial.distance import squareform
 
-    def cluster(threshold):
-        groups, start = [[0]], 0
-        for i in range(1, len(ids)):
-            near_prev = steps[i - 1] <= threshold
-            near_first = distance(feats[start][0], feats[i][0]) <= threshold * 1.8
-            if near_prev and near_first:
-                groups[-1].append(i)
-            else:
-                groups.append([i]); start = i
-        return groups
-
-    low, high = 0.0, 120.0
-    best = cluster(high)
-    for _ in range(40):  # binary search a threshold that gives ~TARGET_GROUPS
-        mid = (low + high) / 2
-        groups = cluster(mid)
-        best = groups if abs(len(groups) - TARGET_GROUPS) < abs(len(best) - TARGET_GROUPS) else best
-        if len(groups) > TARGET_GROUPS: low = mid
-        else: high = mid
-    if not GROUP_RANGE[0] <= len(best) <= GROUP_RANGE[1]:
-        print(f"  note: ended with {len(best)} groups")
-
+    known = [k for k, i in enumerate(ids) if i in cache]
+    singles = [[k] for k, i in enumerate(ids) if i not in cache]
+    groups = []
+    if len(known) == 1:
+        groups = [known]
+    elif known:
+        E = np.array([cache[ids[k]]["clip"] for k in known])
+        C = np.array([cache[ids[k]]["colour"] for k in known], dtype=float)
+        pos = np.array(known, dtype=float)
+        clip_d = 1 - E @ E.T
+        colour_d = np.abs(C[:, None, :] - C[None, :, :]).mean(-1) / 255
+        time_d = np.minimum(np.abs(pos[:, None] - pos[None, :]) / TIME_SPAN, 1)
+        D = clip_d + COLOUR_WEIGHT * colour_d + TIME_WEIGHT * time_d
+        np.fill_diagonal(D, 0)
+        labels = fcluster(linkage(squareform(D, checks=False), "average"), GROUP_CUTOFF, "distance")
+        label_of = list(labels)
+        # Near-identical shots always share a collection, unless that mixes very different photos.
+        for a, b in zip(*np.where(np.triu(clip_d <= 1 - SAME_SHOT, 1))):
+            la, lb = label_of[a], label_of[b]
+            if la == lb:
+                continue
+            members = [k for k, l in enumerate(label_of) if l in (la, lb)]
+            if clip_d[np.ix_(members, members)].max() <= MAX_SPREAD:
+                label_of = [la if l == lb else l for l in label_of]
+        by_label = {}
+        for k, label in zip(known, label_of):
+            by_label.setdefault(label, []).append(k)
+        groups = list(by_label.values())
+    groups = sorted(groups + singles, key=min)  # collections in folder order
     # Put the sharpest shot first; it becomes the group's cover photo.
-    return [[ids[i] for i in sorted(g, key=lambda i: -feats[i][1])] for g in best]
+    sharp = lambda k: -cache[ids[k]]["sharp"] if ids[k] in cache else 0
+    return [[ids[k] for k in sorted(g, key=sharp)] for g in groups]
 
 
 data = {"updated": datetime.date.today().isoformat()}
+gallery_starts = set()
 for key, url in FOLDERS.items():
-    ids = HOME_PICKS[:] if key == "home" and HOME_PICKS else list_photos(url)
+    if key == "home" and HOME_PICKS:
+        ids = HOME_PICKS[:]
+    else:
+        ids, starts, folders = list_photos(url)
+        if key == "gallery":
+            gallery_starts = starts
     data[key] = {"folderUrl": url, "ids": ids}
+    if key == "gallery":
+        data[key]["folders"] = folders  # [name, photo count] in the same order as ids
     if key == "home":
         data[key]["focus"] = {i: HOME_FOCUS[i] for i in ids if i in HOME_FOCUS}
     print(f"{key}: {len(ids)} photos")
-data["gallery"]["groups"] = group_similar(data["gallery"]["ids"])
+
+
+def group_by_folder(ids, starts):
+    """Group each folder on its own, so a collection never spans two folders."""
+    cache, np = photo_features(ids)
+    bounds = sorted(starts | {0}) + [len(ids)]
+    groups = []
+    for a, b in zip(bounds, bounds[1:]):
+        if a < b:
+            groups += group_folder(ids[a:b], cache, np)
+    return groups
+
+
+data["gallery"]["groups"] = group_by_folder(data["gallery"]["ids"], gallery_starts)
 
 
 def apply_merges(groups):
@@ -225,7 +337,36 @@ def apply_splits(groups):
 data["gallery"]["groups"] = apply_splits(data["gallery"]["groups"])
 all_gallery = set(data["gallery"]["ids"])
 data["gallery"]["featured"] = [photo for photo in FEATURED if photo in all_gallery]
-print(f"gallery: {len(data['gallery']['groups'])} groups of similar photos")
+data["gallery"]["autoBig"] = True  # every 10th tile big, plus featured
+data["rotate"] = {}
+
+
+def apply_layout(layout):
+    """Use the arrangement saved by the gallery editor (tools/gallery-editor.py). Photos
+    no longer in Drive drop out; photos the layout hasn't seen yet keep their automatic
+    collections and go first (they're the newest)."""
+    placed, kept = set(), []
+    for collection in layout.get("collections", []):
+        photos = [p for p in collection["photos"] if p in all_gallery and p not in placed]
+        if photos:
+            kept.append((photos, collection.get("big", False)))
+            placed.update(photos)
+    new = [[p for p in group if p not in placed] for group in data["gallery"]["groups"]]
+    collections = [(group, False) for group in new if group] + kept
+    if len(collections) > len(kept):
+        print(f"  {len(collections) - len(kept)} new collections added at the top of the saved layout")
+    data["gallery"]["groups"] = [photos for photos, _ in collections]
+    data["gallery"]["featured"] = [photos[0] for photos, big in collections if big]  # "always big"
+    data["rotate"] = {p: r for p, r in layout.get("rotate", {}).items() if r in (90, 180, 270)}
+    if layout.get("home"):
+        data["home"]["ids"] = layout["home"]
+        data["home"]["focus"] = {i: HOME_FOCUS[i] for i in layout["home"] if i in HOME_FOCUS}
+
+
+if LAYOUT.exists():
+    apply_layout(json.loads(LAYOUT.read_text(encoding="utf-8")))
+    print("applied the saved gallery layout (tools/gallery-layout.json)")
+print(f"gallery: {len(data['gallery']['groups'])} collections")
 
 OUTPUT = pathlib.Path(__file__).resolve().parent.parent / "assets" / "js" / "photos.js"
 with open(OUTPUT, "w", encoding="utf-8", newline="\n") as file:

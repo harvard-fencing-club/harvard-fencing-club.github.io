@@ -91,10 +91,11 @@
 
   // Google occasionally refuses a request when many images load at once: retry from its
   // other image server, then once more shortly after; if it still fails, skip that photo.
-  const sources = (id) => [
-    `https://drive.google.com/thumbnail?id=${id}&sz=w1600`,
-    `https://lh3.googleusercontent.com/d/${id}=w1600`,
-  ];
+  // Photos marked as sideways only come from the server that can rotate them.
+  const sources = (id) =>
+    window.CLUB_PHOTOS?.rotate?.[id]
+      ? [window.HFC.photoUrl(id, 1600), window.HFC.photoUrl(id, 1600)]
+      : [`https://drive.google.com/thumbnail?id=${id}&sz=w1600`, window.HFC.photoUrl(id, 1600)];
   const frames = photos.map((id, i) => {
     const image = make("img", {
       alt: "Photo from Harvard Fencing Club",

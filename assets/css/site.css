@@ -1621,8 +1621,23 @@ kbd {
   .page-home .gallery {
     min-height: 0;
   }
+  /* The photo frame keeps a photo's shape (10:7, between 3:2 and 4:3) on every screen,
+     as big as fits the column (leaving room for the line under it), centred with
+     crimson space around it, so wide photos are never trimmed at the sides. */
   .page-home .home-media {
     min-height: 0;
+    justify-content: center;
+    align-items: center;
+    container-type: size;
+  }
+  .page-home .home-media .gallery,
+  .page-home .home-media .home-photo-meta {
+    flex: 0 0 auto;
+    width: 100%;
+    width: min(100%, calc((100cqh - 44px) * 10 / 7));
+  }
+  .page-home .home-media .gallery {
+    aspect-ratio: 10 / 7;
   }
   .page-home .home {
     min-height: 0;
