@@ -52,7 +52,7 @@ window.CLUB_CONTENT = {
       tag: "Club event",
       title: "Fencing Retreat",
       date: "2026-10-10",
-      description: "Day hiking Mount Kearsarge in New Hampshire together! Check the WhatsApp for details!",
+      description: "Day hiking Mount Kearsarge in New Hampshire together!",
     },
     {
       tag: "Competition",
@@ -61,9 +61,17 @@ window.CLUB_CONTENT = {
       date: "2026-11-01",
       place: "Smith College",
       description:
-        "The New England Intercollegiate Fencing Conference’s fall invitational. Reach out to ask us about registration and travel!",
+        "The New England Intercollegiate Fencing Conference’s fall invitational.",
       href: "https://www.neifc.org/big-one",
       linkLabel: "Tournament details",
+    },
+    {
+      tag: "Competition",
+      title: "Smith Winter Invitational",
+      date: "2026-12-05",
+      place: "Smith College · 9 AM–4 PM",
+      description:
+        "Pools to DEs at Smith’s Indoor Track and Tennis facility, the same venue as the Big One. Reach out to ask us about registration and travel!",
     },
     {
       tag: "Open bouting",
